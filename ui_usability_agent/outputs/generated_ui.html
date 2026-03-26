@@ -1,77 +1,103 @@
-```html
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="min-h-screen">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Simple To-Do List Application</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <title>Login to Your Account</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="h-screen bg-gray-100 flex items-center justify-center">
-  <div class="max-w-md w-full mx-auto p-4 bg-white rounded-lg shadow-md">
-    <h1 class="text-lg font-bold mb-2">To-Do List</h1>
-    <form id="add-task-form" class="mb-4">
-      <input type="text" id="new-task" class="w-full p-2 pl-10 text-sm text-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-600" placeholder="Add new task">
-      <button type="submit" class="absolute left-0 top-0 ml-2 mt-2 text-gray-600 hover:text-gray-900">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-        </svg>
-      </button>
-    </form>
-    <ul id="task-list" class="mb-4">
-      <!-- tasks will be added here -->
-    </ul>
-    <script>
-      const taskList = document.getElementById('task-list');
-      const addTaskForm = document.getElementById('add-task-form');
-      const newTaskInput = document.getElementById('new-task');
-
-      let tasks = [];
-
-      addTaskForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const taskText = newTaskInput.value.trim();
-        if (taskText) {
-          tasks.push({ text: taskText, completed: false });
-          renderTaskList();
-          newTaskInput.value = '';
-        }
-      });
-
-      function renderTaskList() {
-        taskList.innerHTML = '';
-        tasks.forEach((task, index) => {
-          const taskElement = document.createElement('li');
-          taskElement.classList.add('flex', 'items-center', 'py-2', 'pl-3', 'pr-4', 'text-gray-700', 'hover:bg-gray-100');
-          if (task.completed) {
-            taskElement.classList.add('text-gray-500', 'line-through');
-          }
-          taskElement.innerHTML = `
-            <input type="checkbox" class="mr-2" ${task.completed ? 'checked' : ''}>
-            <span>${task.text}</span>
-            <button type="button" class="ml-auto text-gray-600 hover:text-gray-900">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
+<body class="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-blue-100 dark:from-slate-900 dark:via-indigo-950 dark:to-slate-900 flex items-center justify-center p-4 py-12">
+  <main class="w-full max-w-md">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-gray-200 dark:border-slate-700 p-8">
+      <div class="flex justify-center mb-6">
+        <div class="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl p-4 shadow-lg">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+        </div>
+      </div>
+      <h1 class="text-2xl font-bold text-gray-900 dark:text-white text-center mb-2">Login to Your Account</h1>
+      <p class="text-sm text-gray-500 dark:text-gray-400 text-center mb-8">Enter your email and password to access your account.</p>
+      <form>
+        <div class="mb-5">
+          <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Email Address</label>
+          <div class="relative">
+            <div class="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+            </div>
+            <input type="email" id="email" name="email" placeholder="you@example.com" required
+              class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+              aria-describedby="email-helper">
+          </div>
+          <p id="email-helper" class="text-xs text-gray-500 dark:text-gray-400 mt-1.5">We'll never share your email.</p>
+          <p id="email-error" role="alert" class="text-red-500 text-xs mt-1 hidden"></p>
+        </div>
+        <div class="mb-2">
+          <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Password</label>
+          <div class="relative">
+            <div class="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+            </div>
+            <input type="password" id="password" name="password" placeholder="Enter your password" required
+              class="w-full pl-10 pr-12 py-3 rounded-xl border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+              aria-describedby="password-helper">
+            <button type="button" id="password-toggle"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none"
+              aria-label="Toggle password visibility">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
             </button>
-          `;
-          taskList.appendChild(taskElement);
-
-          const checkbox = taskElement.querySelector('input[type="checkbox"]');
-          checkbox.addEventListener('change', () => {
-            tasks[index].completed = checkbox.checked;
-            renderTaskList();
-          });
-
-          const deleteButton = taskElement.querySelector('button');
-          deleteButton.addEventListener('click', () => {
-            tasks.splice(index, 1);
-            renderTaskList();
-          });
-        });
+          </div>
+          <p id="password-helper" class="text-xs text-gray-500 dark:text-gray-400 mt-1.5">Minimum 8 characters.</p>
+          <p id="password-error" role="alert" class="text-red-500 text-xs mt-1 hidden"></p>
+        </div>
+        <div class="flex justify-end mb-5">
+          <a href="/forgot-password" class="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors">Forgot your password?</a>
+        </div>
+        <div class="flex items-center gap-3 mb-6">
+          <input type="checkbox" id="remember" name="remember"
+            class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+          <label for="remember" class="text-sm text-gray-700 dark:text-gray-300">Remember me for 30 days</label>
+        </div>
+        <button type="submit"
+          class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+          Sign In
+        </button>
+      </form>
+      <hr class="border-gray-200 dark:border-slate-700 my-6">
+      <p class="text-sm text-gray-500 dark:text-gray-400 text-center">
+        Don't have an account? <a href="/sign-up" class="text-indigo-600 dark:text-indigo-400 font-medium hover:underline">Sign up</a>
+      </p>
+    </div>
+    <p class="text-xs text-gray-400 dark:text-gray-600 text-center mt-6">&copy; 2026 SaaS Platform Login. All rights reserved.</p>
+  </main>
+  <script>
+    const eyeSVG = '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>';
+    const eyeOffSVG = '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.458 12C4.732 7.943 8.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>';
+    document.getElementById('password-toggle').addEventListener('click', function() {
+      var passwordInput = document.getElementById('password');
+      if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        this.innerHTML = eyeOffSVG;
+      } else {
+        passwordInput.type = 'password';
+        this.innerHTML = eyeSVG;
       }
-    </script>
-  </div>
+    });
+    document.querySelector('form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      var emailInput = document.getElementById('email');
+      var passwordInput = document.getElementById('password');
+      if (emailInput.value === '') {
+        document.getElementById('email-error').innerHTML = 'Email is required';
+        document.getElementById('email-error').classList.remove('hidden');
+      } else {
+        document.getElementById('email-error').classList.add('hidden');
+      }
+      if (passwordInput.value === '') {
+        document.getElementById('password-error').innerHTML = 'Password is required';
+        document.getElementById('password-error').classList.remove('hidden');
+      } else {
+        document.getElementById('password-error').classList.add('hidden');
+      }
+    });
+  </script>
 </body>
 </html>
-```

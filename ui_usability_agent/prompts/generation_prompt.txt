@@ -1,14 +1,125 @@
-You are an expert UI/UX designer and frontend developer.
-Your task is to generate a single HTML file with inline Tailwind css based on the following software requirements.
+You are an expert senior UI/UX designer and Tailwind CSS specialist. Generate a complete, beautiful, production-quality HTML page based on the requirements below.
 
-**Requirements:**
-```json
+CRITICAL OUTPUT RULE:
+- Output ONLY raw HTML. Start with <!DOCTYPE html>. No explanations. No markdown. No code blocks.
+
+TAILWIND + ICONS SETUP — USE EXACTLY THIS:
+- Tailwind CDN: <script src="https://cdn.tailwindcss.com"></script>
+- For icons use ONLY inline SVG. Never use <lucide-icon> tags. They do not work.
+  Mail icon:  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+  Lock icon:  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+  Eye icon:   <svg id="eye-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+
+FULL PAGE LAYOUT — COPY THIS STRUCTURE EXACTLY:
+<html lang="en" class="min-h-screen">
+<body class="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-blue-100 dark:from-slate-900 dark:via-indigo-950 dark:to-slate-900 flex items-center justify-center p-4 py-12">
+
+  <div class="w-full max-w-md">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-gray-200 dark:border-slate-700 p-8">
+      ... card content here ...
+    </div>
+  </div>
+
+</body>
+
+CARD CONTENT STRUCTURE — IN THIS EXACT ORDER:
+1. Brand icon at top center:
+   <div class="flex justify-center mb-6">
+     <div class="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl p-4 shadow-lg">
+       [inline SVG icon, h-8 w-8 text-white]
+     </div>
+   </div>
+
+2. Title: <h1 class="text-2xl font-bold text-gray-900 dark:text-white text-center mb-2">Title</h1>
+
+3. Subtitle: <p class="text-sm text-gray-500 dark:text-gray-400 text-center mb-8">Subtitle</p>
+
+4. Form fields — EVERY field must follow this EXACT pattern:
+   <div class="mb-5">
+     <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Email Address</label>
+     <div class="relative">
+       <div class="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
+         [inline SVG icon here]
+       </div>
+       <input type="email" id="email" name="email" placeholder="you@example.com" required
+         class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+         aria-describedby="email-helper">
+     </div>
+     <p id="email-helper" class="text-xs text-gray-500 dark:text-gray-400 mt-1.5">We'll never share your email.</p>
+     <p id="email-error" role="alert" class="text-red-500 text-xs mt-1 hidden"></p>
+   </div>
+
+   PASSWORD field — same pattern but with eye toggle:
+   <div class="mb-2">
+     <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Password</label>
+     <div class="relative">
+       <div class="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
+         [lock SVG icon]
+       </div>
+       <input type="password" id="password" name="password" placeholder="Enter your password" required
+         class="w-full pl-10 pr-12 py-3 rounded-xl border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+         aria-describedby="password-helper">
+       <button type="button" id="password-toggle"
+         class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none"
+         aria-label="Toggle password visibility">
+         [eye SVG icon]
+       </button>
+     </div>
+     <p id="password-helper" class="text-xs text-gray-500 dark:text-gray-400 mt-1.5">Minimum 8 characters.</p>
+     <p id="password-error" role="alert" class="text-red-500 text-xs mt-1 hidden"></p>
+   </div>
+
+5. Forgot password — BELOW password field, ABOVE remember me:
+   <div class="flex justify-end mb-5">
+     <a href="/forgot-password" class="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors">Forgot your password?</a>
+   </div>
+
+6. Remember me — flex row, NOT label above:
+   <div class="flex items-center gap-3 mb-6">
+     <input type="checkbox" id="remember" name="remember"
+       class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+     <label for="remember" class="text-sm text-gray-700 dark:text-gray-300">Remember me for 30 days</label>
+   </div>
+
+7. Submit button:
+   <button type="submit"
+     class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+     Sign In
+   </button>
+
+8. Divider then sign up link:
+   <hr class="border-gray-200 dark:border-slate-700 my-6">
+   <p class="text-sm text-gray-500 dark:text-gray-400 text-center">
+     Don't have an account? <a href="/sign-up" class="text-indigo-600 dark:text-indigo-400 font-medium hover:underline">Sign up</a>
+   </p>
+
+9. Footer copyright below the card (outside the white card div, inside max-w-md wrapper):
+   <p class="text-xs text-gray-400 dark:text-gray-600 text-center mt-6">&copy; 2026 Platform Name. All rights reserved.</p>
+
+RESPONSIVE:
+- Body has p-4 py-12 so card never touches screen edges on small phones
+- Card is w-full max-w-md — fills screen on mobile, centered on desktop
+- All inputs have py-3 minimum for touch targets
+- Works at 320px wide minimum
+
+ACCESSIBILITY (WCAG 2.2 AA) — ALL REQUIRED:
+- Every input has a visible <label> with matching for= attribute
+- Every input has aria-describedby pointing to helper text
+- Every icon-only button has aria-label
+- Error paragraphs have role="alert" and start hidden
+- All interactive elements have focus ring classes
+- Use semantic: <main>, <form>, <header> where appropriate
+- input background bg-white dark:bg-slate-700 — consistent across ALL inputs
+
+JAVASCRIPT — at end of body:
+- Password toggle: change input type password↔text, swap eye SVG innerHTML
+  const eyeSVG = `[eye svg string]`;
+  const eyeOffSVG = `[eye-off svg string]`;
+  Use these to replace innerHTML of the toggle button on click.
+- Form submit validation: e.preventDefault(), check empty fields, toggle hidden class on error paragraphs
+- No frameworks, vanilla JS only
+
+Requirements input:
 {requirements_json}
 
-Instructions:
-Create a visually appealing and user friendly interface.
-Use semantic HTML5 tags.
-Use Tailwind CSS for all styling.You must use the Tailwind CDN script, not a local build.
-The design should be responsive and work well on desktop mobile devices.
-Ensure the UI is accessible(WCAG 2.2 AA compliant).
-Only output the HTML code.Do not include any other text or explanations.
+Generate the complete HTML now. Start immediately with <!DOCTYPE html>.

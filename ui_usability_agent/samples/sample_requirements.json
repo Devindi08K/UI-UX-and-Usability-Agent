@@ -1,18 +1,50 @@
 {
-  "projectName": "Simple To-Do List Application",
-  "functionalRequirements": [
-    "Users must be able to see a list of their to-do items.",
-    "Users must be able to add a new to-do item to the list.",
-    "Users must be able to mark a to-do item as complete.",
-    "Completed items should appear visually different from incomplete items (e.g., with a line-through)."
+  "project_name": "SaaS Platform Login",
+  "version": "1.0",
+  "description": "A modern, secure, and user-friendly login page for a SaaS application.",
+  "user_stories": [
+    "As a user, I want to enter my email and password to log in.",
+    "As a user, I want to see an option to keep me logged in.",
+    "As a user, I want a way to recover my password if I forget it.",
+    "As a user, I want to see clear feedback if my login fails."
   ],
-  "nonFunctionalRequirements": [
-    "The interface should be clean, simple, and intuitive.",
-    "The application must be responsive and work on both desktop and mobile browsers."
-  ],
-  "userStories": [
-    "As a user, I want to view all my tasks so that I can remember what I need to do.",
-    "As a user, I want to add a new task so that I can keep track of new work.",
-    "As a user, I want to mark a task as done so that I can see my progress."
+  "ui_requirements": {
+    "screen_title": "Login to Your Account",
+    "components": [
+      {
+        "type": "text_input",
+        "label": "Email Address",
+        "placeholder": "you@example.com",
+        "required": true,
+        "icon": "email"
+      },
+      {
+        "type": "password_input",
+        "label": "Password",
+        "placeholder": "Enter your password",
+        "required": true,
+        "features": ["toggle_visibility"]
+      },
+      {
+        "type": "checkbox",
+        "label": "Remember me"
+      },
+      {
+        "type": "button",
+        "label": "Sign In",
+        "style": "primary"
+      },
+      {
+        "type": "link",
+        "label": "Forgot your password?",
+        "target": "/forgot-password"
+      }
+    ]
+  },
+  "non_functional_requirements": [
+    "Must be fully responsive on devices from 320px to 1920px width.",
+    "Must comply with WCAG 2.2 AA accessibility standards.",
+    "The page should load in under 2 seconds on a standard 4G connection.",
+    "Must include a dark mode."
   ]
 }

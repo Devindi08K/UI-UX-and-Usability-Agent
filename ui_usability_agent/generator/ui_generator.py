@@ -13,8 +13,8 @@ def get_llm():
     """Create and return a ChatGroq instance"""
     return ChatGroq(
         model = "llama-3.3-70b-versatile",  #"llama-3.1-8b-instant"
-        temperature=0.3,                    # 0 = exact, 1 = creative (lower for structured output)
-        max_tokens=2048                     #limit response length (increased for complete accessibility notes)
+        temperature=0.4,                    # 0 = exact, 1 = creative (lower for structured output)
+        max_tokens=4096                     #limit response length (increased for complete accessibility notes)
 
     )
 
@@ -28,11 +28,14 @@ def generate_ui(requirements: dict) -> str:
     Returns:
        The generated HTML as a string.
     """
+    # Read the enhanced prompt template
     with open("prompts\\generation_prompt.txt", "r", encoding="utf-8") as f:
         prompt_template_string = f.read()
 
+    # Create the prompt template
     prompt_template = ChatPromptTemplate.from_template(prompt_template_string)
-
+    
+    # Convert requirements to JSON string for the prompt
     requirements_json_string = json.dumps(requirements, indent=2)
 
     llm = get_llm()
