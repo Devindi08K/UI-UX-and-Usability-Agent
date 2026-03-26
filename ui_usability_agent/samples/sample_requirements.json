@@ -1,0 +1,18 @@
+{
+  "projectName": "Simple To-Do List Application",
+  "functionalRequirements": [
+    "Users must be able to see a list of their to-do items.",
+    "Users must be able to add a new to-do item to the list.",
+    "Users must be able to mark a to-do item as complete.",
+    "Completed items should appear visually different from incomplete items (e.g., with a line-through)."
+  ],
+  "nonFunctionalRequirements": [
+    "The interface should be clean, simple, and intuitive.",
+    "The application must be responsive and work on both desktop and mobile browsers."
+  ],
+  "userStories": [
+    "As a user, I want to view all my tasks so that I can remember what I need to do.",
+    "As a user, I want to add a new task so that I can keep track of new work.",
+    "As a user, I want to mark a task as done so that I can see my progress."
+  ]
+}

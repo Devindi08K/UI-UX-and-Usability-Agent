@@ -1,0 +1,14 @@
+You are an expert UI/UX designer and frontend developer.
+Your task is to generate a single HTML file with inline Tailwind css based on the following software requirements.
+
+**Requirements:**
+```json
+{requirements_json}
+
+Instructions:
+Create a visually appealing and user friendly interface.
+Use semantic HTML5 tags.
+Use Tailwind CSS for all styling.You must use the Tailwind CDN script, not a local build.
+The design should be responsive and work well on desktop mobile devices.
+Ensure the UI is accessible(WCAG 2.2 AA compliant).
+Only output the HTML code.Do not include any other text or explanations.
