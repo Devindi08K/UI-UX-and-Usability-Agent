@@ -12,7 +12,7 @@ load_dotenv()
 def get_llm():
     """Create and return a ChatGroq instance"""
     return ChatGroq(
-        model = "llama-3.3-70b-versatile",  #"llama-3.1-8b-instant"
+        model = "llama-3.1-8b-instant",
         temperature=0.4,                    # 0 = exact, 1 = creative (lower for structured output)
         max_tokens=4096                     #limit response length (increased for complete accessibility notes)
 
@@ -33,7 +33,10 @@ def generate_ui(requirements: dict) -> str:
         prompt_template_string = f.read()
 
     # Create the prompt template
-    prompt_template = ChatPromptTemplate.from_template(prompt_template_string)
+    prompt_template = ChatPromptTemplate.from_template(
+        template=prompt_template_string,
+        template_format="jinja2"
+    )
     
     # Convert requirements to JSON string for the prompt
     requirements_json_string = json.dumps(requirements, indent=2)
@@ -42,7 +45,10 @@ def generate_ui(requirements: dict) -> str:
 
     chain = prompt_template | llm | StrOutputParser()
 
-    generated_html = chain.invoke({"requirements_json": requirements_json_string})
+    generated_html = chain.invoke({
+        "requirements_json": requirements_json_string,
+        "screen_name": requirements.get("screen_name", "Untitled Screen")
+    })
 
     return generated_html
     
