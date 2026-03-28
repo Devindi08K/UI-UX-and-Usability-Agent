@@ -2,12 +2,6 @@
 
 import json
 import os
-from generator.ui_generator import generate_ui
-from input_normalizer import normalize_input
-from screen_planner import plan_screens, screens_to_requirements, save_screen_plan
-
-import json
-import os
 import argparse
 import shutil
 from generator.ui_generator import generate_ui
@@ -25,7 +19,10 @@ def run_planning_phase():
     output_dir = "outputs/generated_screens"
     if os.path.exists(output_dir):
         print(f"[main] Cleaning up old screens in {output_dir}...")
-        shutil.rmtree(output_dir)
+        try:
+            shutil.rmtree(output_dir)
+        except PermissionError:
+            print(f"[main] Warning: Could not clean up {output_dir} (directory may be in use). Continuing anyway.")
 
     # 2. Load raw requirements
     requirements_path = "samples/sample_requirements.json"
@@ -111,10 +108,11 @@ def run_generation_phase(screen_identifier: str):
     screen_req = per_screen_reqs[0]
     screen_id = screen_req.get("screen_id", "unknown_screen")
     screen_name = screen_req.get("screen_name", "Unknown Screen")
+    screen_type = screen_req.get("screen_type", "unknown")
 
     # 5. Generate the UI
-    print(f"\n[main] Generating UI for '{screen_name}' ({screen_id})...")
-    generated_html = generate_ui(screen_req)
+    print(f"\n[main] Generating UI for '{screen_name}' ({screen_id}) of type '{screen_type}'...")
+    generated_html = generate_ui(screen_req, screen_type)
 
     # 6. Save the generated HTML
     output_dir = "outputs/generated_screens"

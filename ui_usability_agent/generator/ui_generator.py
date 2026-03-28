@@ -12,18 +12,19 @@ load_dotenv()
 def get_llm():
     """Create and return a ChatGroq instance"""
     return ChatGroq(
-        model = "llama-3.1-8b-instant",
+        model = "llama-3.3-70b-versatile",
         temperature=0.4,                    # 0 = exact, 1 = creative (lower for structured output)
         max_tokens=4096                     #limit response length (increased for complete accessibility notes)
 
     )
 
-def generate_ui(requirements: dict) -> str:
+def generate_ui(requirements: dict, screen_type: str) -> str:
     """
     Generate HTML UI from software requirements using an LLM.
 
     Args:
        requirements: A dictionary containing software requirements.
+       screen_type: The specific type of screen to generate (e.g., 'auth', 'list').
 
     Returns:
        The generated HTML as a string.
@@ -47,7 +48,8 @@ def generate_ui(requirements: dict) -> str:
 
     generated_html = chain.invoke({
         "requirements_json": requirements_json_string,
-        "screen_name": requirements.get("screen_name", "Untitled Screen")
+        "screen_name": requirements.get("screen_name", "Untitled Screen"),
+        "screen_type_explicit": screen_type
     })
 
     return generated_html

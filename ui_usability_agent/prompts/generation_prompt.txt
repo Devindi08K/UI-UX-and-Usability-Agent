@@ -1,120 +1,398 @@
-### 1. Role and Goal
+You are a world-class UI/UX designer and Tailwind CSS expert. Your task is to generate a
+single, complete, production-quality HTML file for ONE specific screen.
 
-You are a world-class UI/UX designer and Tailwind CSS expert. Your task is to generate a single, complete, production-quality HTML file for a given screen. The design must be clean, modern, and visually appealing, inspired by the best SaaS applications.
+**CRITICAL INSTRUCTION: You MUST read the `screen_type` field from the Requirements JSON below.
+If `screen_type` is "form", generate a FORM screen. If `screen_type` is "auth", generate an AUTH screen.
+If `screen_type` is "list", generate a LIST screen. Do NOT generate the wrong screen type.**
 
-### 2. Core Directives & Style Guide
+================================================================================
+RULE 0 — OUTPUT FORMAT (VIOLATING THIS BREAKS EVERYTHING)
+================================================================================
+- Output ONLY raw HTML. Start IMMEDIATELY with <!DOCTYPE html>. End with </html>.
+- NO backticks. NO ```html. NO Jinja. NO template syntax. NO branches.
+- You are generating ONE final, rendered HTML page for ONE specific screen.
+- screen_type tells you WHICH layout to use. Generate that layout directly.
 
-**CRITICAL**: You MUST follow these rules.
+================================================================================
+RULE 1 — READ THE JSON FIRST (do this before writing a single line of HTML)
+================================================================================
+The requirements_json contains everything you need. Extract these before starting:
 
-- **Output Format**: Your entire output must be **only the raw HTML code**. It must start with `<!DOCTYPE html>` and end with `</html>`. Do not include any explanations, markdown, or any text outside of the HTML.
-- **Frameworks**: You MUST use **Tailwind CSS** for all styling and **Alpine.js** for any interactivity. Both must be included via CDN in the `<head>`.
-- **Self-Contained**: The file must be a single, self-contained HTML file. All CSS is handled by Tailwind classes. All icons MUST be inline SVGs (e.g., from Heroicons).
-- **Accessibility**: All interactive elements (buttons, inputs) must have clear `focus` states. All images should have `alt` tags. All inputs must have associated `<label>`s.
+  FROM THE JSON, identify:
+  A. screen_name       → used in <title> and header h1
+  B. screen_type       → determines layout (see Rule 3)
+  C. project_name      → the system this screen belongs to
+  D. domain            → the business domain (e.g. "Finance", "Healthcare", "HR")
+  E. purpose           → one sentence describing what this screen does
+  F. user_role         → who uses this screen (Guest / Staff / Admin / etc.)
+  G. key_actions       → list of things the user can DO (these become your buttons)
+  H. functional_requirements → the FRs relevant to this screen (drives content)
+  I. entity_name       → the PRIMARY data entity on this screen.
+                         Derive this from the screen_name and FRs.
+                         Examples:
+                           "Manage Bookings"     → entity = "Booking"
+                           "Transaction History"  → entity = "Transaction"
+                           "Patient Records"      → entity = "Patient"
+                           "Invoice List"         → entity = "Invoice"
+                           "Employee Directory"   → entity = "Employee"
 
----
+  FROM entity_name AND domain, infer:
+  J. realistic_columns → what columns/fields does this entity have?
+                         Think about what a real professional system would show.
+                         Examples:
+                           Booking   → ID, Guest, Room, Check-in, Check-out, Amount, Status
+                           Invoice   → Invoice #, Client, Issue Date, Due Date, Amount, Status
+                           Patient   → Patient ID, Name, Ward, Doctor, Admission, Condition
+                           Employee  → ID, Name, Department, Role, Start Date, Status
+                           Transaction → Ref #, Account, Type, Amount, Date, Status
 
-### **Visual Style: "Modern & Clean SaaS"**
+  K. realistic_statuses → what status values does this entity have?
+                          Think about the entity lifecycle, NOT hotel statuses.
+                          Examples:
+                            Invoice   → Draft / Sent / Paid / Overdue
+                            Leave Req → Pending / Approved / Rejected
+                            Patient   → Admitted / Discharged / Critical
+                            Order     → Processing / Shipped / Delivered / Returned
+                            User      → Active / Inactive / Suspended
 
-This style is defined by clarity, spacing, and a professional color scheme.
+  L. primary_action    → the most important action from key_actions
+                         This becomes the button label on each row AND the modal title.
+                         Use the EXACT verb from key_actions, not a generic one.
+                         Examples:
+                           key_actions: ["approve_leave"]   → button: "Approve"
+                           key_actions: ["cancel_booking"]  → button: "Cancel"
+                           key_actions: ["process_refund"]  → button: "Refund"
+                           key_actions: ["deactivate_user"] → button: "Deactivate"
 
-- **Color Palette**:
-  - **Primary/Action**: A strong, trustworthy blue. Use `bg-blue-600`, `hover:bg-blue-700`, `text-blue-600`. The focus ring should be `focus:ring-blue-500`.
-  - **Background**: A very light, almost white, gray. Use `bg-gray-50`.
-  - **Surface/Cards**: Clean white. Use `bg-white`.
-  - **Text**:
-    - **Headings**: Dark and prominent. Use `text-gray-900`.
-    - **Body/Labels**: A softer gray. Use `text-gray-700`.
-    - **Subtle/Placeholder**: A lighter gray. Use `text-gray-500`.
-  - **Borders**: Subtle gray dividers. Use `border-gray-200`.
+  M. stat_card_labels  → for dashboard/list screens, what KPIs matter?
+                         Derive from the domain and FRs, NOT from a hotel template.
+                         Examples:
+                           Finance  → Total Revenue, Outstanding Invoices, Paid This Month, Overdue
+                           HR       → Total Employees, On Leave Today, Open Positions, Avg Tenure
+                           Hospital → Admitted Today, Available Beds, Discharged Today, Critical Cases
 
-- **Typography**:
-  - **Font**: Use a clean, modern sans-serif font. The template uses **Inter**.
-  - **Headings**: Use `font-bold`. `<h1>` should be `text-2xl` or `text-3xl`. `<h2>` should be `text-xl` or `text-2xl`.
-  - **Body**: Use `text-base`.
+================================================================================
+RULE 2 — VISUAL STYLE (locked — never deviate)
+================================================================================
+Page background:        bg-gray-50
+Cards/surfaces:         bg-white border border-gray-100 shadow-sm rounded-xl
+Primary button:         inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium
+                        text-white bg-gradient-to-r from-violet-500 to-indigo-600
+                        hover:from-violet-600 hover:to-indigo-700
+Danger button:          px-3 py-1.5 rounded-lg text-xs font-medium
+                        border border-red-400 text-red-600 hover:bg-red-50
+Secondary button:       px-3 py-1.5 rounded-lg text-xs font-medium
+                        border border-gray-300 text-gray-600 hover:bg-gray-50
+Stat card value:        text-2xl font-bold text-gray-900
+Stat card label:        text-sm text-gray-500 font-medium
+Trend pill (positive):  text-xs font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-700
+Trend pill (negative):  text-xs font-medium px-2 py-0.5 rounded-full bg-red-100 text-red-700
+Table header:           bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wider px-6 py-3
+Table row:              border-b border-gray-100 hover:bg-gray-50 transition-colors
+Status badge base:      inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+Focus rings:            focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2
+Accent color:           text-violet-600
 
-- **Layout & Spacing (The most important part!)**:
-  - **Generous Whitespace**: Use ample padding and margins. Standard padding inside cards should be `p-6` or `p-8`.
-  - **Consistent Gaps**: Use `space-y-4` or `space-y-6` for vertical spacing between elements. Use `gap-6` or `gap-8` in grids.
+STATUS BADGE COLORS — assign based on semantic meaning, not entity type:
+  Positive/complete:    bg-green-100 text-green-800   (Paid, Active, Approved, Delivered, Confirmed)
+  Neutral/in-progress:  bg-blue-100 text-blue-800     (Processing, In Review, Checked In, Admitted)
+  Warning/pending:      bg-yellow-100 text-yellow-800 (Pending, Draft, Due Soon, On Leave)
+  Negative/blocked:     bg-red-100 text-red-700       (Overdue, Cancelled, Rejected, Suspended, Inactive)
+  Neutral/closed:       bg-gray-100 text-gray-700     (Closed, Archived, Discharged, Completed)
 
-- **Component Styles**:
-  - **Cards**: `bg-white`, `rounded-xl`, `shadow-md`.
-  - **Buttons**:
-    - **Primary**: `inline-flex items-center gap-x-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600`.
-    - **Secondary**: `inline-flex items-center gap-x-2 rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50`.
-  - **Inputs**: `block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6`.
-  - **Labels**: `block text-sm font-medium leading-6 text-gray-900`.
+DO NOT use: dark: classes, arbitrary Tailwind values, hardcoded hex colors.
 
----
+================================================================================
+RULE 3 — LAYOUT BY SCREEN TYPE
+================================================================================
+Generate ONLY the layout matching screen_type. No branches, no conditionals.
 
-### 3. HTML Boilerplate
+── "list" ──────────────────────────────────────────────────────────────────────
+  MANDATORY SECTIONS (in order):
 
-**CRITICAL**: Start your response with this exact boilerplate. Build the UI inside the `<main>` tag.
+  1. STAT CARDS ROW
+     - 3 cards minimum, in a grid (grid-cols-1 sm:grid-cols-3)
+     - Each card: white rounded-xl, p-6
+       · Label: derived from M (stat_card_labels)
+       · Value: realistic number for the domain
+       · Trend pill: e.g. "↑ 12% vs last month"
+     - DO NOT use hotel KPIs for non-hotel systems
 
-```html
+  2. FILTER TOOLBAR
+     - White card, p-4
+     - 3+ controls appropriate to the entity:
+       · Always include a text search input
+       · Include date range inputs if entity has dates
+       · Include a status dropdown using K (realistic_statuses)
+       · Include a category/type dropdown if entity has types
+     - End with: <button id="apply-filters-btn"> Apply Filters </button> (primary style)
+     - Below button: <span id="filters-indicator" class="hidden text-xs text-violet-600
+       font-medium">Filters applied</span>
+
+  3. DATA TABLE
+     - White card with title bar showing screen_name + "Showing X of Y records"
+     - Columns derived from J (realistic_columns) — NOT hardcoded hotel columns
+     - 6 rows minimum, data realistic for the domain
+     - Status column uses K (realistic_statuses) with correct badge colors
+     - Actions column per row:
+       · Secondary "View" button
+       · Primary or danger button using L (primary_action) as label
+         Add: class="open-modal-btn" data-modal="action-modal"
+              data-name="[entity identifier]" data-id="[entity ID]"
+
+  4. PAGINATION ROW
+     - Centered, flex row: Prev | 1 | 2 | 3 | Next
+     - Styled as secondary buttons
+
+── "dashboard" ─────────────────────────────────────────────────────────────────
+  MANDATORY SECTIONS (in order):
+
+  1. WELCOME BAR
+     - "Good morning, [user_role]" + today's date
+     - Optional: 1-2 quick action buttons from key_actions
+
+  2. STAT CARDS ROW
+     - 4 cards, grid-cols-2 lg:grid-cols-4
+     - Labels from M, values realistic, all with trend pills
+
+  3. SUMMARY TABLE OR CHART PLACEHOLDER
+     - White card titled "Recent [entity_name]s" or equivalent
+     - Table with 5 rows of recent activity
+     - Status badges, amounts/values, timestamps
+
+  4. RECENT ACTIVITY FEED
+     - White card titled "Activity"
+     - 5+ items, each: colored dot + action description + relative time
+       e.g. "Invoice #INV-2201 marked as Paid · 2 hours ago"
+     - Dot colors: green=positive, yellow=pending, red=negative, blue=neutral
+
+── "form" ──────────────────────────────────────────────────────────────────────
+  MANDATORY SECTIONS:
+
+  1. SECTION CARDS (2-3 grouped sections)
+     - Group fields logically based on the entity and FRs
+     - Each section: white card with a section title (text-base font-semibold)
+     - Field layout: grid grid-cols-1 md:grid-cols-2 gap-4
+     - Every field: <label for="id"> + <input id="id"> — properly linked
+     - All fields PRE-FILLED with realistic domain-appropriate sample data
+     - Hint text under each field: <p class="mt-1 text-xs text-gray-400">hint</p>
+
+  2. FOOTER ACTION ROW
+     - Right-aligned: Secondary "Cancel" button + Primary submit button
+     - Submit label comes from key_actions (e.g. "Create Invoice", "Save Employee")
+
+── "detail" ────────────────────────────────────────────────────────────────────
+  MANDATORY SECTIONS:
+
+  1. SUMMARY HEADER CARD
+     - Entity name/title (large, font-bold)
+     - Entity ID + status badge
+     - Key dates or amounts
+     - Action buttons from key_actions in top-right
+
+  2. DETAIL PANELS (2-3 white cards side by side or stacked)
+     - Group related fields logically
+     - Read-only field display: label (text-xs text-gray-500) + value (text-sm font-medium)
+     - Derive sections from the entity's realistic_columns
+
+  3. NOTES / TIMELINE SECTION
+     - White card with a short activity log or notes area
+     - 3+ timeline entries with timestamps
+
+── "auth" ──────────────────────────────────────────────────────────────────────
+  MANDATORY SECTIONS:
+
+  1. CENTERED LAYOUT (full height, flex items-center justify-center)
+  2. LOGO + PROJECT NAME centered above the card
+  3. WHITE CARD (max-w-md mx-auto, p-8, rounded-2xl shadow-md)
+     - Title: "Sign in to your account" or "Create your account"
+     - Fields appropriate to the action:
+         Login:    Email + Password
+         Register: Full Name + Email + Password + Confirm Password
+     - All inputs: labeled, id-linked, with placeholder text
+     - Password fields: type="password"
+     - Full-width primary submit button
+     - Secondary link below: "Don't have an account? Sign up" or "Forgot password?"
+  4. NO HEADER/NAV for auth screens — just the centered card
+
+================================================================================
+RULE 4 — INTERACTIVITY (vanilla JS only)
+================================================================================
+ONE <script> block just before </body>:
+
+document.addEventListener('DOMContentLoaded', function() {
+
+  // Filter indicator
+  document.getElementById('apply-filters-btn')?.addEventListener('click', () => {
+    document.getElementById('filters-indicator')?.classList.toggle('hidden');
+  });
+
+  // Modal open — reads data attributes to populate modal dynamically
+  document.querySelectorAll('.open-modal-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const modal = document.getElementById(btn.dataset.modal);
+      const nameEl = document.getElementById('modal-entity-name');
+      const idEl   = document.getElementById('modal-entity-id');
+      if (nameEl) nameEl.textContent = btn.dataset.name || '';
+      if (idEl)   idEl.textContent   = btn.dataset.id   || '';
+      modal?.classList.remove('hidden');
+    });
+  });
+
+  // Modal close
+  document.querySelectorAll('.close-modal-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      btn.closest('.modal-overlay')?.classList.add('hidden');
+    });
+  });
+
+});
+
+MODAL HTML — include this before </body> for list/detail screens.
+Customize the title and body text to match the primary_action and entity:
+
+<div id="action-modal" class="modal-overlay hidden fixed inset-0 bg-black/40 z-50
+     flex items-center justify-center" role="dialog" aria-modal="true"
+     aria-labelledby="modal-title">
+  <div class="bg-white rounded-2xl shadow-xl p-6 max-w-md w-full mx-4">
+    <h2 id="modal-title" class="text-lg font-semibold text-gray-900">
+      [primary_action] <span id="modal-entity-id"></span>?
+    </h2>
+    <p class="mt-2 text-sm text-gray-600">
+      You are about to [primary_action_description] for
+      <span id="modal-entity-name" class="font-medium"></span>.
+      [Consequence sentence appropriate to the action and domain.]
+    </p>
+    <div class="mt-6 flex justify-end gap-3">
+      <button class="close-modal-btn px-4 py-2 rounded-lg text-sm font-medium
+        border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors">
+        Cancel
+      </button>
+      <button class="close-modal-btn px-4 py-2 rounded-lg text-sm font-medium
+        text-white bg-gradient-to-r from-violet-500 to-indigo-600
+        hover:from-violet-600 hover:to-indigo-700 transition-all">
+        Confirm [primary_action]
+      </button>
+    </div>
+  </div>
+</div>
+
+REPLACE all [bracketed placeholders] with values derived from the requirements JSON.
+The modal title, body text, and button labels must match the actual action and domain.
+A financial system's "Approve Invoice" modal must NOT say "cancellation fee".
+
+================================================================================
+RULE 5 — REALISTIC CONTENT (100% inferred from JSON — zero hardcoding)
+================================================================================
+ALL sample data must be derived from the domain and entity_name. Rules:
+
+  - Entity IDs: use a prefix matching the entity.
+      Invoice → #INV-2201, Patient → #PAT-3042, Employee → #EMP-1194
+      Never use #RES- for non-booking entities.
+
+  - Names: use culturally diverse, realistic names appropriate to the domain.
+      Do NOT always use the same names. Vary them across rows.
+
+  - Amounts/values: realistic for the domain.
+      Finance: $12,450.00 / $3,280.50 / $890.00
+      Healthcare: not amounts — use scores, durations, counts instead
+
+  - Dates: short readable format — "Mar 28", "Apr 2", "Jan 15"
+      Never show YYYY-MM-DD in visible text.
+
+  - Status values: use K (realistic_statuses) — never use hotel statuses
+      for non-hotel systems.
+
+  - Stat card values: realistic for the domain.
+      Finance dashboard → "$284,500 total revenue" not "120 rooms"
+
+  - Table rows: minimum 6 rows, with VARIED status values across rows.
+      Never show all rows with the same status.
+
+  - The primary action button label on each row = L (primary_action).
+      A finance system row should say "Approve" or "Process" — not "Cancel Booking".
+
+================================================================================
+RULE 6 — ACCESSIBILITY
+================================================================================
+  - Every <input> and <select>: <label for="field-id"> linked by matching id
+  - Icon-only buttons: aria-label="descriptive action"
+  - Status badges: text label always present (color alone is insufficient)
+  - Modal: role="dialog" aria-modal="true" aria-labelledby="modal-title"
+  - Form sections: use <fieldset> and <legend> where grouping is semantic
+
+================================================================================
+HTML BOILERPLATE
+================================================================================
 <!DOCTYPE html>
 <html lang="en" class="h-full bg-gray-50">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{screen_name}}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    },
-                }
-            }
-        }
-    </script>
-    <style>
-        body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SCREEN_NAME — PROJECT_NAME</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'] } } } }
+  </script>
+  <style>body{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}</style>
 </head>
 <body class="h-full">
-    <div class="min-h-full">
-        <!-- Header -->
-        <header class="bg-white shadow-sm">
-            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                <div class="flex h-16 items-center justify-between">
-                    <div class="flex items-center gap-x-4">
-                        <svg class="h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
-                        </svg>
-                        <h1 class="text-lg font-semibold text-gray-800">{{screen_name}}</h1>
-                    </div>
-                    <!-- Optional: Add user menu or actions here -->
-                </div>
-            </div>
-        </header>
+<div class="min-h-full">
 
-        <!-- Main Content -->
-        <main class="py-10">
-            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                <!-- YOUR UI CONTENT GOES HERE -->
-                <!-- Example: <div class="bg-white rounded-xl shadow-md p-8">...</div> -->
-            </div>
-        </main>
+  <!-- HEADER (skip for auth screens) -->
+  <header class="bg-white shadow-sm">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div class="flex h-16 items-center justify-between">
+        <div class="flex items-center gap-x-3">
+          <svg class="h-8 w-8 text-violet-600" xmlns="http://www.w3.org/2000/svg"
+               fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/>
+          </svg>
+          <h1 class="text-lg font-semibold text-gray-800">SCREEN_NAME</h1>
+        </div>
+        <!-- If key_actions includes a "create" or "new" action: add primary button here -->
+      </div>
     </div>
+  </header>
+
+  <!-- MAIN -->
+  <main class="py-10">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-6">
+      <!-- GENERATE CONTENT HERE based on screen_type -->
+    </div>
+  </main>
+
+  <!-- MODAL — include for list/detail screens -->
+
+</div>
+<script>
+  <!-- VANILLA JS HERE -->
+</script>
 </body>
 </html>
-```
 
-Now, using all the rules and the boilerplate above, generate the complete HTML for the following screen.
+================================================================================
+GENERATE THE SCREEN NOW
+================================================================================
+Explicit screen_type (must obey):
+{{ screen_type_explicit }}
 
-CONTENT RULES:
-- No Lorem ipsum.
-- Use realistic hospitality data: guest names, room numbers, dates, prices, reservation IDs.
-- Make it look like a real product screen.
+Requirements JSON:
+{{ requirements_json }}
 
-REQUIREMENTS FOR THIS SCREEN:
-{requirements_json}
+Final checklist before you start writing HTML:
+  [ ] I have read entity_name from the JSON (or inferred it from screen_name + FRs)
+  [ ] I have derived realistic_columns appropriate to the entity and domain
+  [ ] I have derived realistic_statuses that match this entity's lifecycle
+  [ ] I have derived primary_action from key_actions
+  [ ] I have derived stat_card_labels from the domain and FRs
+  [ ] My modal text matches the actual action — it does NOT say "cancellation fee"
+        unless this is literally a booking cancellation screen
+  [ ] My table has 6+ rows with varied statuses
+  [ ] My entity IDs use a prefix matching the entity, not #RES-
 
-Now generate the complete HTML. Start immediately with <!DOCTYPE html>.
-
+Start IMMEDIATELY with <!DOCTYPE html>. No text before it.
