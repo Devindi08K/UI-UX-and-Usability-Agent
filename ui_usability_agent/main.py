@@ -7,6 +7,7 @@ import shutil
 from generator.ui_generator import generate_ui
 from input_normalizer import normalize_input
 from screen_planner import plan_screens, screens_to_requirements, save_screen_plan
+from evaluator.composite_scorer import evaluate, print_score_report, save_score_report
 
 def run_planning_phase():
     """
@@ -126,11 +127,45 @@ def run_generation_phase(screen_identifier: str):
     print(f"Generated file: {output_path}")
 
 
+def run_evaluation_phase():
+    """
+    Evaluates all generated screens in outputs/generated_screens/.
+    """
+    screens_dir = "outputs/generated_screens"
+    if not os.path.exists(screens_dir):
+        print(f"Error: {screens_dir} not found. Please generate screens first.")
+        return
+
+    html_files = [f for f in os.listdir(screens_dir) if f.endswith('.html')]
+    if not html_files:
+        print(f"No HTML files found in {screens_dir}.")
+        return
+
+    print(f"Evaluating {len(html_files)} screens...")
+
+    for html_file in html_files:
+        html_path = os.path.join(screens_dir, html_file)
+        screen_name = html_file.replace('.html', '')
+
+        print(f"\n=== Evaluating {screen_name} ===")
+
+        with open(html_path, 'r', encoding='utf-8') as f:
+            html_string = f.read()
+
+        report = evaluate(html_string, iteration_number=1)
+        print_score_report(report)
+
+        # Save individual report
+        report_path = f"outputs/{screen_name}_score_report.json"
+        save_score_report(report, report_path)
+        print(f"Report saved to {report_path}")
+
+
 def main():
     """
-    Main entry point to handle command-line arguments for planning and generation.
+    Main entry point to handle command-line arguments for planning, generation, and evaluation.
     """
-    parser = argparse.ArgumentParser(description="UI Generation and Planning Tool")
+    parser = argparse.ArgumentParser(description="UI Generation, Planning, and Evaluation Tool")
     parser.add_argument(
         '--plan',
         action='store_true',
@@ -142,6 +177,11 @@ def main():
         metavar='SCREEN_ID',
         help="Run the generation phase for a specific screen ID from the plan."
     )
+    parser.add_argument(
+        '--evaluate',
+        action='store_true',
+        help="Run the evaluation phase on all generated screens in outputs/generated_screens/."
+    )
 
     args = parser.parse_args()
 
@@ -149,11 +189,14 @@ def main():
         run_planning_phase()
     elif args.generate:
         run_generation_phase(args.generate)
+    elif args.evaluate:
+        run_evaluation_phase()
     else:
         parser.print_help()
         print("\nExample Usage:")
         print("1. Plan all screens: python main.py --plan")
         print("2. Generate a single screen: python main.py --generate login")
+        print("3. Evaluate all generated screens: python main.py --evaluate")
 
 
 if __name__ == "__main__":
