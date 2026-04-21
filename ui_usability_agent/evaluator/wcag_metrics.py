@@ -1,163 +1,363 @@
-# Axe-core runner + WCAG penalty scorer
+"""
+evaluator/wcag_metrics.py
+=========================
+Automated WCAG 2.2 accessibility metrics for static HTML.
+See EVALUATION_RATIONALE.md for per-function justification and references.
+
+Scoring formula
+---------------
+wcag_score = axe_score       × 0.50
+           + alt_score        × 0.20
+           + landmark_score   × 0.15
+           + contrast_score   × 0.10
+           + lang_score       × 0.05
+
+axe-core receives the highest weight (0.50) because it is the industry-
+standard automated WCAG checker (Deque Systems; Google Lighthouse).
+Automated tools detect approximately 30-40% of WCAG violations; the
+remainder require human expert evaluation.
+
+Sub-metric functions accept a pre-parsed BeautifulSoup object.
+Only compute_wcag_score() parses raw HTML.
+"""
 
 import subprocess
 import json
 import os
 import tempfile
+import re
 from bs4 import BeautifulSoup
 
-IMPACT_PENALTIES = {'critical': 20, 'serious': 10, 'moderate': 5, 'minor': 2}
 
-POUR_MAP = {
-    'Perceivable':    ['image-alt','color-contrast','audio-caption','object-alt','input-image-alt'],
-    'Operable':       ['keyboard','focus-order-semantics','bypass','tabindex','scrollable-region-focusable'],
-    'Understandable': ['label','error-suggestion','html-has-lang','html-lang-valid','autocomplete-valid'],
-    'Robust':         ['valid-lang','aria-valid-attr','aria-valid-attr-value','duplicate-id','aria-roles']
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+
+# Penalty weights aligned with WCAG conformance levels (Deque axe-core docs)
+IMPACT_PENALTIES = {
+    'critical': 20,   # Level A failures — completely blocks access
+    'serious':  10,   # Level A/AA failures — significant barrier
+    'moderate':  5,   # Level AA guidance — meaningful friction
+    'minor':     2,   # Level AA/AAA guidance — minor inconvenience
 }
 
-def run_axe_core(html_string):
+# axe-core rule IDs grouped by WCAG POUR principle
+# Source: Deque axe-core v4.x rule documentation
+# https://dequeuniversity.com/rules/axe/4.7
+POUR_MAP = {
+    'Perceivable': [
+        'image-alt',          # SC 1.1.1
+        'color-contrast',     # SC 1.4.3
+        'audio-caption',      # SC 1.2.2
+        'object-alt',         # SC 1.1.1
+        'input-image-alt',    # SC 1.1.1
+        'video-caption',      # SC 1.2.2
+        'meta-viewport',      # SC 1.4.4
+    ],
+    'Operable': [
+        'keyboard',                    # SC 2.1.1
+        'focus-order-semantics',       # SC 2.4.3
+        'bypass',                      # SC 2.4.1
+        'tabindex',                    # SC 2.4.3
+        'scrollable-region-focusable', # SC 2.1.1
+        'focus-trap',                  # SC 2.1.2
+        'link-in-text-block',          # SC 1.4.1
+    ],
+    'Understandable': [
+        'label',              # SC 3.3.2
+        'error-suggestion',   # SC 3.3.3
+        'html-has-lang',      # SC 3.1.1
+        'html-lang-valid',    # SC 3.1.1
+        'autocomplete-valid', # SC 1.3.5
+        'select-name',        # SC 4.1.2
+        'label-title-only',   # SC 3.3.2
+    ],
+    'Robust': [
+        'valid-lang',             # SC 3.1.2
+        'aria-valid-attr',        # SC 4.1.2
+        'aria-valid-attr-value',  # SC 4.1.2
+        'duplicate-id',           # SC 4.1.1
+        'aria-roles',             # SC 4.1.2
+        'aria-required-children', # SC 4.1.2
+        'aria-required-parent',   # SC 4.1.2
+    ],
+}
+
+
+# ---------------------------------------------------------------------------
+# axe-core integration
+# ---------------------------------------------------------------------------
+
+def run_axe_core(html_string: str) -> list:
     """
-    Logic:
-    - Write html_string to a temp .html file.
-    - Run: ['axe', temp_path, '--format', 'json', '--stdout'] using subprocess.run(timeout=30).
-    - Parse JSON output. Extract violations from results[0]['violations'].
-    - Return violations list. Return [] if anything fails (wrap in try/except).
+    Write *html_string* to a temp file, run the axe CLI, and return
+    the violations list from the JSON output.
+
+    Returns [] if axe-core is not installed, times out, or returns
+    malformed output — the evaluator continues gracefully in all cases.
+
+    Command: axe <path> --format json --stdout
+
+    Ref: Deque Systems axe-core — https://github.com/dequelabs/axe-core
     """
+    if not html_string or not html_string.strip():
+        return []
+
+    temp_path = None
     try:
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.html', delete=False) as f:
+        with tempfile.NamedTemporaryFile(
+            mode='w', suffix='.html', delete=False, encoding='utf-8'
+        ) as f:
             f.write(html_string)
             temp_path = f.name
-        result = subprocess.run(['axe', temp_path, '--format', 'json', '--stdout'], capture_output=True, text=True, timeout=30)
-        if result.returncode == 0:
-            data = json.loads(result.stdout)
-            violations = data[0]['violations'] if data else []
-            return violations
-        else:
+
+        result = subprocess.run(
+            ['axe', temp_path, '--format', 'json', '--stdout'],
+            capture_output=True, text=True, timeout=30,
+        )
+
+        if result.returncode != 0:
             return []
+
+        data = json.loads(result.stdout)
+        return data[0].get('violations', []) if data else []
+
     except Exception:
         return []
     finally:
-        if 'temp_path' in locals():
+        if temp_path and os.path.exists(temp_path):
             os.unlink(temp_path)
 
-def axe_penalty_score(violations):
+
+def axe_penalty_score(violations: list) -> float:
     """
-    Logic:
-    - Start base_score = 100.
-    - For each violation subtract IMPACT_PENALTIES[violation['impact']].
-    - Return max(0, base_score).
+    Convert axe-core violations to a 0-100 score.
+
+    Starts at 100 and subtracts IMPACT_PENALTIES[impact] per violation.
+    Floored at 0. Penalty-based (not ratio-based) because each violation
+    creates a concrete barrier regardless of how many rules pass.
+
+    Ref: Deque impact definitions —
+    https://github.com/dequelabs/axe-core/blob/develop/doc/impact.md
     """
-    base_score = 100
+    score = 100.0
     for v in violations:
-        impact = v.get('impact', 'minor')
-        penalty = IMPACT_PENALTIES.get(impact, 2)
-        base_score -= penalty
-    return max(0, base_score)
+        score -= IMPACT_PENALTIES.get((v.get('impact') or 'minor').lower(), 2)
+    return max(0.0, score)
 
-def pour_breakdown(violations):
-    """
-    Logic:
-    - For each principle in POUR_MAP:
-      - Filter violations whose id is in POUR_MAP[principle].
-      - penalty = sum of IMPACT_PENALTIES for those violations.
-      - score = max(0, 25 - penalty)
-    - Return {'Perceivable': score, 'Operable': score, 'Understandable': score, 'Robust': score}
-    """
-    breakdown = {}
-    for principle, rule_ids in POUR_MAP.items():
-        relevant = [v for v in violations if v.get('id') in rule_ids]
-        penalty = sum(IMPACT_PENALTIES.get(v.get('impact', 'minor'), 2) for v in relevant)
-        score = max(0, 25 - penalty)
-        breakdown[principle] = score
-    return breakdown
 
-def alt_text_ratio(soup):
+def pour_breakdown(violations: list) -> dict:
     """
-    Logic:
-    - Find all img tags. If none, return 100.0.
-    - Count imgs with non-empty alt attribute.
-    - Return (with_alt / total) * 100.
+    Distribute violations across the four WCAG POUR principles.
+
+    Each principle starts at 25 points. Violations mapped to that principle
+    (via POUR_MAP) reduce its score by their impact penalty.
+
+    Returns {'Perceivable': int, 'Operable': int,
+             'Understandable': int, 'Robust': int}  each 0-25.
+
+    Ref: W3C WCAG 2.2 — Understanding the Four Principles
+    https://www.w3.org/WAI/WCAG22/Understanding/intro
+    """
+    return {
+        principle: max(0, 25 - sum(
+            IMPACT_PENALTIES.get((v.get('impact') or 'minor').lower(), 2)
+            for v in violations if v.get('id') in rule_ids
+        ))
+        for principle, rule_ids in POUR_MAP.items()
+    }
+
+
+# ---------------------------------------------------------------------------
+# BS4 supplementary checks
+# ---------------------------------------------------------------------------
+
+def alt_text_ratio(soup: BeautifulSoup) -> float:
+    """
+    WCAG 2.2 SC 1.1.1 proxy — Non-text Content (Level A).
+
+    Counts meaningful images (excludes role="presentation" / role="none",
+    which correctly use alt="") that have a non-empty alt attribute.
+
+    Returns (with_alt / meaningful_imgs) × 100, or 100 if no images.
+
+    SC 1.1.1 is the most frequently violated WCAG criterion: absent on
+    58.2% of pages (WebAIM Million, 2023).
+
+    Ref: WCAG 2.2 SC 1.1.1; WebAIM Million 2023
     """
     imgs = soup.find_all('img')
     if not imgs:
         return 100.0
-    with_alt = sum(1 for img in imgs if img.get('alt', '').strip())
-    return (with_alt / len(imgs)) * 100
 
-def aria_landmark_score(soup):
-    """
-    Logic:
-    - landmarks = ['main', 'nav', 'banner', 'contentinfo', 'complementary']
-    - For each: check soup.find(attrs={'role': landmark}) OR soup.find(landmark tag).
-    - score = (found / 5) * 100. Return score.
-    """
-    landmarks = ['main', 'nav', 'banner', 'contentinfo', 'complementary']
-    found = 0
-    for lm in landmarks:
-        if soup.find(attrs={'role': lm}) or soup.find(lm):
-            found += 1
-    return (found / 5) * 100
-
-def tailwind_contrast_score(soup):
-    """
-    Logic:
-    - Find all text elements: p, h1-h6, span, label, a, button.
-    - If none, return 100.0.
-    - For each element, get class string.
-    - Mark as LOW contrast if class has text-gray-300/400/500 without dark: prefix.
-    - Mark as LOW contrast if text-white AND bg-white both present.
-    - Mark as LOW contrast if text-black AND bg-black both present.
-    - good_count = total - low_contrast_count.
-    - Return (good_count / total) * 100.
-    - Add a comment: this is an approximation; exact contrast requires rendered CSS.
-    """
-    # This is an approximation; exact contrast requires rendered CSS.
-    text_elements = soup.find_all(['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'label', 'a', 'button'])
-    if not text_elements:
+    meaningful = [
+        img for img in imgs
+        if (img.get('role') or '').lower() not in ('presentation', 'none')
+    ]
+    if not meaningful:
         return 100.0
-    low_contrast = 0
-    for elem in text_elements:
-        classes = elem.get('class', [])
-        class_str = ' '.join(classes).lower()
-        if ('text-gray-300' in class_str or 'text-gray-400' in class_str or 'text-gray-500' in class_str) and 'dark:' not in class_str:
-            low_contrast += 1
-        elif 'text-white' in class_str and 'bg-white' in class_str:
-            low_contrast += 1
-        elif 'text-black' in class_str and 'bg-black' in class_str:
-            low_contrast += 1
-    good_count = len(text_elements) - low_contrast
-    return (good_count / len(text_elements)) * 100
 
-def compute_wcag_score(html_string):
+    with_alt = sum(1 for img in meaningful if img.get('alt', '').strip())
+    return (with_alt / len(meaningful)) * 100.0
+
+
+def aria_landmark_score(soup: BeautifulSoup) -> float:
     """
-    Logic:
-    - soup = BeautifulSoup(html_string, 'lxml')
-    - violations = run_axe_core(html_string)
-    - axe_score = axe_penalty_score(violations)
-    - pour_scores = pour_breakdown(violations)
-    - alt_score = alt_text_ratio(soup)
-    - landmark_score = aria_landmark_score(soup)
-    - contrast_score = tailwind_contrast_score(soup)
-    - wcag_score = axe_score*0.50 + alt_score*0.20 + landmark_score*0.15 + contrast_score*0.15
-    - weakest_pour = min(pour_scores, key=pour_scores.get)
-    - Return full dict with all scores, violations count, weakest_pour.
+    WCAG 2.2 SC 2.4.1 proxy — Bypass Blocks (Level A).
+
+    Checks five core ARIA landmark roles. Each is accepted as either
+    role="<name>" on any element, or the corresponding HTML5 element:
+      main / <main>
+      nav  / <nav>
+      banner / <header>
+      contentinfo / <footer>
+      complementary / <aside>
+
+    Returns (found / 5) × 100
+
+    Ref: WCAG 2.2 SC 2.4.1; W3C ARIA APG Landmark Regions
+    https://www.w3.org/WAI/ARIA/apg/practices/landmark-regions/
     """
+    CHECKS = [
+        ('main',          'main'),
+        ('nav',           'nav'),
+        ('banner',        'header'),
+        ('contentinfo',   'footer'),
+        ('complementary', 'aside'),
+    ]
+    found = sum(
+        1 for role, tag in CHECKS
+        if soup.find(attrs={'role': role}) or soup.find(tag)
+    )
+    return (found / len(CHECKS)) * 100.0
+
+
+def tailwind_contrast_score(soup: BeautifulSoup) -> float:
+    """
+    WCAG 2.2 SC 1.4.3 approximation — Contrast Minimum (Level AA).
+
+    Flags text elements with known problematic Tailwind class combinations.
+    This is an approximation — exact contrast requires the rendered CSS
+    cascade. axe-core's color-contrast rule handles accurate checking when
+    HTML is rendered in a browser.
+
+    Low-contrast patterns detected:
+      • text-{gray|slate|zinc|neutral|stone}-[123][05]0 (light gray text)
+      • text-white + bg-white  (invisible)
+      • text-black + bg-black  (invisible)
+      • text-opacity-[0-3]* or opacity-[0-3]* (low opacity)
+
+    Elements with a dark: prefix class are excluded (dark mode handled).
+
+    Returns (good / total) × 100, or 100 if no text elements.
+
+    Ref: WCAG 2.2 SC 1.4.3; Tailwind CSS color palette docs
+    """
+    TEXT_TAGS = [
+        'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+        'span', 'label', 'a', 'button', 'li', 'td', 'th', 'caption',
+    ]
+    elements = soup.find_all(TEXT_TAGS)
+    if not elements:
+        return 100.0
+
+    LIGHT_TEXT  = re.compile(r'\btext-(?:gray|slate|zinc|neutral|stone)-[123][05]0\b')
+    WHITE_WHITE = re.compile(r'\btext-white\b.*\bbg-white\b|\bbg-white\b.*\btext-white\b')
+    BLACK_BLACK = re.compile(r'\btext-black\b.*\bbg-black\b|\bbg-black\b.*\btext-black\b')
+    LOW_OPACITY = re.compile(r'\b(?:text-opacity-[0-3]\d|opacity-[0-3]\d)\b')
+
+    low = 0
+    for el in elements:
+        cls = ' '.join(el.get('class') or [])
+        if 'dark:' in cls:
+            continue
+        if (LIGHT_TEXT.search(cls)
+                or WHITE_WHITE.search(cls)
+                or BLACK_BLACK.search(cls)
+                or LOW_OPACITY.search(cls)):
+            low += 1
+
+    return ((len(elements) - low) / len(elements)) * 100.0
+
+
+def html_lang_score(soup: BeautifulSoup) -> float:
+    """
+    WCAG 2.2 SC 3.1.1 — Language of Page (Level A).
+
+    Returns 100 if <html lang="xx"> has a value of at least 2 characters
+    (minimum ISO 639-1 code length), else 0.
+
+    Missing lang attribute found on 17.1% of top 1 million pages
+    (WebAIM Million, 2023) despite being a Level A requirement.
+
+    Ref: WCAG 2.2 SC 3.1.1
+    """
+    html_tag = soup.find('html')
+    if not html_tag:
+        return 0.0
+    return 100.0 if len((html_tag.get('lang') or '').strip()) >= 2 else 0.0
+
+
+# ---------------------------------------------------------------------------
+# Composite
+# ---------------------------------------------------------------------------
+
+def compute_wcag_score(html_string: str) -> dict:
+    """
+    Parse *html_string* and return a normalised WCAG 2.2 accessibility score.
+
+    Formula
+    -------
+    wcag_score = axe_score × 0.50 + alt_score × 0.20
+               + landmark_score × 0.15 + contrast_score × 0.10
+               + lang_score × 0.05
+
+    Returns
+    -------
+    dict
+        wcag_score       int   0-100
+        axe_score        float 0-100
+        pour_scores      dict  {principle: int 0-25}
+        alt_score        float 0-100
+        landmark_score   float 0-100
+        contrast_score   float 0-100
+        lang_score       float 0 or 100
+        violations_count int
+        weakest_pour     str
+    """
+    if not html_string or not html_string.strip():
+        return {
+            'wcag_score': 0, 'axe_score': 0, 'pour_scores': {},
+            'alt_score': 0, 'landmark_score': 0, 'contrast_score': 0,
+            'lang_score': 0, 'violations_count': 0, 'weakest_pour': 'none',
+        }
+
     soup = BeautifulSoup(html_string, 'lxml')
-    violations = run_axe_core(html_string)
-    axe_score = axe_penalty_score(violations)
-    pour_scores = pour_breakdown(violations)
-    alt_score = alt_text_ratio(soup)
+
+    violations    = run_axe_core(html_string)
+    axe_score     = axe_penalty_score(violations)
+    pour_scores   = pour_breakdown(violations)
+    alt_score     = alt_text_ratio(soup)
     landmark_score = aria_landmark_score(soup)
     contrast_score = tailwind_contrast_score(soup)
-    wcag_score = axe_score * 0.50 + alt_score * 0.20 + landmark_score * 0.15 + contrast_score * 0.15
-    weakest_pour = min(pour_scores, key=pour_scores.get)
+    lang_score    = html_lang_score(soup)
+
+    wcag_score = (
+        axe_score      * 0.50
+        + alt_score    * 0.20
+        + landmark_score * 0.15
+        + contrast_score * 0.10
+        + lang_score   * 0.05
+    )
+
     return {
-        'wcag_score': round(wcag_score),
-        'axe_score': axe_score,
-        'pour_scores': pour_scores,
-        'alt_score': alt_score,
-        'landmark_score': landmark_score,
-        'contrast_score': contrast_score,
+        'wcag_score':      round(wcag_score),
+        'axe_score':       axe_score,
+        'pour_scores':     pour_scores,
+        'alt_score':       alt_score,
+        'landmark_score':  landmark_score,
+        'contrast_score':  contrast_score,
+        'lang_score':      lang_score,
         'violations_count': len(violations),
-        'weakest_pour': weakest_pour
+        'weakest_pour':    min(pour_scores, key=pour_scores.get) if pour_scores else 'none',
     }

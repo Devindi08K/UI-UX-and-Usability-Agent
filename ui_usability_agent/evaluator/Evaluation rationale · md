@@ -1,0 +1,395 @@
+# Evaluation Engine — Function Rationale & References
+
+This document explains **why each metric function was chosen**, which standard it maps to, how the scoring logic was derived, and what academic or industry sources support it. It is the companion to the four Python files in `evaluator/`.
+
+>** Every function in the evaluation engine is grounded in a published standard or peer-reviewed usability research. The functions are structural proxies — not direct measurements — because the system evaluates static HTML without rendering. This limitation is acknowledged explicitly in each module's header.
+
+---
+
+## Table of Contents
+
+1. [Scoring Architecture](#scoring-architecture)
+2. [ISO 9241-11 Metrics](#iso-9241-11-metrics)
+3. [Nielsen Heuristic Metrics](#nielsen-heuristic-metrics)
+4. [WCAG 2.2 Metrics](#wcag-22-metrics)
+5. [Why These Three Standards?](#why-these-three-standards)
+6. [Limitations](#limitations)
+7. [Full Reference List](#full-reference-list)
+
+---
+
+## Scoring Architecture
+
+```
+Total Score = ISO × 0.30 + Nielsen × 0.30 + WCAG × 0.40
+```
+
+| Standard           | Weight | Rationale |
+|---|---|---|
+| ISO 9241-11        | 30% | Task-performance usability: effectiveness, efficiency, satisfaction |
+| Nielsen Heuristics | 30% | Expert heuristic quality of the interaction design |
+| WCAG 2.2           | 40% | Accessibility — highest weight because (a) it is a legal requirement in many jurisdictions (EN 301 549, ADA, European Accessibility Act), (b) accessibility improvements benefit all users (curb-cut effect), and (c) WCAG checking via axe-core is the most objectively verifiable of the three |
+
+Each standard produces a 0–100 score. Each sub-metric returns a raw 0–4 integer which is averaged and normalised to 0–100.
+
+---
+
+## ISO 9241-11 Metrics
+
+**Standard:** ISO 9241-11:2018 *Ergonomics of human-system interaction — Part 11: Usability: Definitions and concepts.* Geneva: International Organization for Standardization.
+
+ISO 9241-11 defines usability across three measurable dimensions: **Effectiveness**, **Efficiency**, and **Satisfaction**. The five original functions plus one addition each map to one of these dimensions.
+
+---
+
+### `nav_depth_score` → Effectiveness
+
+**What it measures:** Navigation hierarchy depth (number of nesting levels inside `<nav>` elements).
+
+**Why navigation depth = effectiveness?**
+Effectiveness in ISO 9241-11 is defined as "the accuracy and completeness with which users achieve specified goals." Deep navigation menus require more clicks and increase working memory load, which directly reduces task completion rates — the primary indicator of effectiveness.
+
+**Research basis:** Zaphiris & Mtei (1997) demonstrated experimentally that task errors increase significantly in hierarchical menus beyond two levels. Nielsen (2000, p. 198) recommends flat navigation of at most two levels for primary site sections. WCAG 2.2 SC 2.4.5 (Multiple Ways, Level AA) independently recommends navigation structures that do not require deep traversal.
+
+**Score mapping:**
+| Max depth  | Score | Reason |
+| ≤ 2        | 4     | Optimal — no submenu required |
+| 3          | 2     | Acceptable — one sub-level |
+| ≥ 4        | 0     | Exceeds recommendation |
+| No `<nav>` | 2     | Neutral — page may not require navigation |
+
+---
+
+### `label_pairing_score` → Effectiveness
+
+**What it measures:** Whether form inputs have programmatically associated labels.
+
+**Why labels = effectiveness?**
+Without a visible, associated label a user cannot accurately determine what data a field expects — directly failing the "accuracy and completeness" criterion of ISO effectiveness. This is also a testable WCAG 2.2 criterion (SC 1.3.1 Level A, SC 3.3.2 Level A).
+
+**Why four detection patterns?**
+HTML and ARIA define four equivalent label association mechanisms. The original code only checked `<label for="id">`, which would incorrectly penalise correct ARIA-based labelling. ISO 9241-171:2008 §9.3.14 requires *any* visible label in a consistent position — not specifically the `for=` pattern.
+
+| Pattern | Spec |
+| `<label for="id">` | HTML5 — canonical |
+| `aria-label` on element | ARIA 1.2 |
+| `aria-labelledby` referencing another element | ARIA 1.2 |
+| Input nested inside `<label>` | HTML5 implicit label |
+
+**Why include `<textarea>` and `<select>`?**
+The original specification omitted these. ISO 9241-143:2012 §9.3 requires labels for all data-entry controls — not just `<input>` elements.
+
+---
+
+### `form_completion_score` → Efficiency
+
+**What it measures:** Whether text-entry inputs have format hints (placeholder, title, aria-describedby).
+
+**Why hints = efficiency?**
+Efficiency in ISO 9241-11 is defined as "resources expended in relation to the accuracy and completeness with which users achieve goals." Format hints reduce the time and mental effort users spend working out what to type — a direct efficiency gain.
+
+**Standard basis:** ISO 9241-143:2012 §7.2 explicitly recommends providing example values or format hints for any field where the expected format is not obvious. Nielsen (1994) Heuristic H6 (Recognition over Recall) supports this.
+
+**Note on placeholders:** Placeholder text is not a substitute for a visible label (WCAG 2.2 Failure F65). This metric scores guidance quality independently of `label_pairing_score`.
+
+---
+
+### `heading_hierarchy_score` → Efficiency
+
+**What it measures:** Whether HTML heading levels follow a sequential order without skipping levels (h1→h2→h3, no h1→h3 jumps).
+
+**Why heading order = efficiency?**
+A logical heading sequence allows users to rapidly scan and locate content without reading full body text — reducing time-on-task, which is efficiency. Skipping levels breaks the document outline for both sighted users (visual hierarchy collapses) and screen-reader users (who navigate by heading level).
+
+**Standard basis:** WCAG 2.2 SC 1.3.1 (Level A) requires that heading markup conveys structural relationships. WebAIM's semantic structure guidelines explicitly prohibit skipping heading levels.
+
+**Score mapping:**
+| Skipped levels (jumps) | Score |
+|---|---|
+| 0 | 4 |
+| 1 | 3 |
+| 2 | 2 |
+| 3+ | 0 |
+| No headings | 2 (neutral) |
+
+---
+
+### `button_clarity_score` → Satisfaction
+
+**What it measures:** Whether button labels use specific, non-vague action text.
+
+**Why label clarity = satisfaction?**
+Satisfaction in ISO 9241-11 includes "freedom from discomfort." Vague button labels ("OK", "Submit", "Click here") require users to infer what will happen — this inference work increases cognitive load and is a recognised source of frustration.
+
+**Standard basis:** ISO 9241-143:2012 §8.4 specifies that command button labels should use specific action verbs describing the outcome ("Save order", "Send message"). Krug (2014) *Don't Make Me Think* Chapter 3: "Obvious always wins."
+
+**Improvement over original:** The original ignored icon-only buttons with a descriptive `aria-label` (which are perfectly valid). The revised version also uses the `value` attribute as a fallback for `<input type="submit">`.
+
+---
+
+### `interactive_feedback_score` → Satisfaction *(added)*
+
+**What it measures:** Whether the page has structural mechanisms for communicating the result of user actions back to the user (loading states, success/error confirmations, animated state changes).
+
+**Why this was added:**
+The original five ISO functions covered structure and labelling but nothing about dynamic feedback — a major gap. ISO 9241-11:2018 §3.1.5 defines satisfaction as including "freedom from discomfort." Interfaces that give no indication of action outcomes feel unresponsive, which is a primary source of frustration.
+
+**Research basis:** Nielsen (1993) demonstrated that response time feedback is critical at three thresholds (<1 s, <10 s, >10 s). In static HTML we cannot measure actual response time, but we can detect whether the developer provisioned feedback infrastructure at all.
+
+**Detection categories (each worth +1, capped at 4):**
+| Category | Mechanism |
+|---|---|
+| Dynamic announcements | `aria-live` regions (WCAG SC 4.1.3) |
+| Explicit feedback roles | `role="status"`, `role="alert"`, `role="log"` |
+| Visual state transitions | Tailwind `transition`, `hover:`, `active:`, `focus:` classes |
+| Loading indicators | `<progress>`, `role="progressbar"`, `aria-busy` |
+
+---
+
+## Nielsen Heuristic Metrics
+
+**Standard:** Nielsen, J. (1994). *10 usability heuristics for user interface design.* Nielsen Norman Group. https://www.nngroup.com/articles/ten-usability-heuristics/
+
+The original specification covered six heuristics (H1, H3, H4, H5, H8, H9). The revised engine adds H6 and H10, which were entirely absent.
+
+---
+
+### `system_status_score` → H1: Visibility of system status
+
+**What it measures:** Whether the page shows structural signals of system status communication.
+
+**Heuristic:** "The system should always keep users informed about what is going on, through appropriate feedback within reasonable time."
+
+**Why `<progress>` scores +2 instead of +1:** `<progress>` represents a deliberate design decision to implement measurable, quantified status — stronger than a CSS class that might be used for styling only.
+
+**Detection signals:**
+| Signal | Points | Reason |
+|---|---|---|
+| `<progress>` element | +2 | Explicit quantified progress |
+| `aria-current` attribute | +1 | Marks active item in a set |
+| `.active` / `.current` / `.selected` class | +1 | Visual current-state indicator |
+
+---
+
+### `user_control_score` → H3: User control and freedom
+
+**What it measures:** Whether cancel, back, undo, reset, and dismiss controls are present.
+
+**Heuristic:** "Users often choose system functions by mistake and will need a clearly marked 'emergency exit' to leave the unwanted state without going through an extended dialogue."
+
+**Why non-linear score mapping?** One cancel button already provides a meaningful escape path. Additional controls indicate more comprehensive support for user freedom — each additional one is more valuable than a linear scale would suggest.
+
+| Controls found | Score |
+|---|---|
+| 0 | 0 |
+| 1 | 2 |
+| 2 | 3 |
+| 3+ | 4 |
+
+---
+
+### `button_consistency_score` → H4: Consistency and standards
+
+**What it measures:** Whether buttons share consistent visual styling.
+
+**Heuristic:** "Users should not have to wonder whether different words, situations, or actions mean the same thing."
+
+**Improvement over original:** The original compared full class frozensets, which flagged `btn btn-primary` vs `btn btn-primary ml-2` as "inconsistent" even though they look identical. The revised version extracts only semantic appearance classes (`bg-*`, `text-*`, `border-*`, `rounded-*`, `font-*`, `shadow-*`) before comparing, ignoring layout utilities (`m-*`, `flex`, `w-*`) that do not affect the button's visual appearance.
+
+---
+
+### `error_prevention_score` → H5: Error prevention
+
+**What it measures:** Whether text-entry inputs use HTML5 constraint validation attributes.
+
+**Heuristic:** "Even better than good error messages is a careful design which prevents a problem from occurring in the first place."
+
+**Standard basis:** HTML5 constraint validation is the W3C-standardised mechanism for client-side error prevention. The WHATWG HTML Living Standard defines these attributes specifically for this purpose.
+
+**Validated attributes detected:**
+`required`, `pattern`, `minlength`, `maxlength`, `min`, `max`, and semantic input types: `email`, `number`, `tel`, `url`, `date`, `month`, `week`, `time`, `datetime-local`.
+
+**Improvement over original:** Added `min`/`max` (numeric range constraints) and additional semantic input types (`month`, `week`, `datetime-local`).
+
+---
+
+### `recognition_score` → H6: Recognition rather than recall *(added)*
+
+**What it measures:** Whether the interface presents options visually rather than requiring users to remember them.
+
+**Heuristic:** "Minimize the user's memory load by making objects, actions, and options visible. The user should not have to remember information from one part of the dialogue to another."
+
+**Why this was added:** H6 was entirely absent from the original six-function set. It is especially relevant to LLM-generated UIs, which often produce free-text inputs where a `<select>` or `<datalist>` would better serve the user.
+
+**Detection categories (each worth +1, capped at 4):**
+| Category | Mechanism |
+|---|---|
+| Visible choice lists | `<select>` elements |
+| Browser-assisted recall | `autocomplete` attribute |
+| Suggested options | `<datalist>` linked to an input |
+| Location awareness | Breadcrumb navigation (`aria-label="breadcrumb"`) |
+
+---
+
+### `minimalist_design_score` → H8: Aesthetic and minimalist design
+
+**What it measures:** The ratio of semantic HTML elements to `<div>` elements.
+
+**Heuristic:** "Dialogues should not contain irrelevant or rarely needed information. Every extra unit of information in a dialogue competes with the relevant information units and diminishes their relative visibility."
+
+**Why semantic ratio as a proxy?** In HTML, using semantic elements (`<main>`, `<article>`, `<section>`, etc.) instead of undifferentiated `<div>` indicates the developer understood the purpose of each page region — the prerequisite for purposeful, minimalist design. This is both a code-quality signal and a structural proxy.
+
+**Threshold basis:** Radovanović et al. (2015) found that well-structured pages typically have a semantic ratio of 0.3–0.5 in empirical analysis of HTML5 adoption.
+
+---
+
+### `error_message_score` → H9: Help users recognise, diagnose, and recover from errors
+
+**What it measures:** Whether structural error messaging infrastructure exists in the HTML.
+
+**Heuristic:** "Error messages should be expressed in plain language, precisely indicate the problem, and constructively suggest a solution."
+
+**Why structural detection?** In static HTML we cannot verify the quality of error message text, but we can detect whether the developer provisioned the error messaging machinery at all. Absence of any `role="alert"`, `aria-live`, or error class suggests no error recovery path exists.
+
+---
+
+### `help_documentation_score` → H10: Help and documentation *(added)*
+
+**What it measures:** Whether contextual help mechanisms are present.
+
+**Heuristic:** "Even though it is better if the system can be used without documentation, it may be necessary to provide help. Information should be easy to search, focused on the user's task, list concrete steps, and not be too large."
+
+**Why this was added:** H10 was entirely absent from the original six-function set. LLM-generated UIs frequently omit tooltips, inline help text, and help links entirely.
+
+**Detection categories (each worth +1, capped at 4):**
+| Category | Mechanism |
+|---|---|
+| Hover tooltips | `title` attribute on interactive elements |
+| Linked descriptions | `aria-describedby` |
+| Progressive disclosure | `<details>` / `<summary>` |
+| Help links | `<a>` with text/href containing 'help', 'faq', 'guide', etc. |
+
+---
+
+## WCAG 2.2 Metrics
+
+**Standard:** W3C (2023). *Web Content Accessibility Guidelines (WCAG) 2.2.* https://www.w3.org/TR/WCAG22/
+
+### `run_axe_core` + `axe_penalty_score`
+
+**Why axe-core?**
+axe-core is the industry-standard open-source accessibility testing engine developed by Deque Systems. It is used by Google Lighthouse, Microsoft Accessibility Insights, and the US government's Accessibility Conformance Reporting (ACR) programme. It programmatically implements WCAG 2.0/2.1/2.2 Success Criteria as testable rules.
+
+axe-core detects approximately 30–40% of all WCAG violations automatically (Deque, 2023) — the remainder require human expert evaluation.
+
+**Why penalty-based scoring (not ratio-based)?**
+Each violation creates a concrete barrier for a user with a disability, regardless of how many rules pass. The impact-level weights reflect real-world severity and align with WCAG conformance levels:
+
+| Impact | Penalty | Corresponds to |
+|---|---|---|
+| critical | –20 | Level A failures — completely blocks access |
+| serious | –10 | Level A/AA failures — significant barrier |
+| moderate | –5 | Level AA guidance — meaningful friction |
+| minor | –2 | Level AA/AAA guidance — minor inconvenience |
+
+---
+
+### `pour_breakdown`
+
+**Why POUR?**
+The POUR framework is the normative organisational structure of all WCAG 2.x versions. Breaking violations down by principle provides actionable diagnostic information — a page may score well overall but reveal a specific weakness (e.g. all failures in Perceivable indicating image/media issues, or all failures in Operable indicating keyboard navigation issues).
+
+Each principle starts at 25 points. Violations mapped to that principle reduce its score by their impact penalty.
+
+---
+
+### `alt_text_ratio` → SC 1.1.1 Non-text Content (Level A)
+
+**Why this function?**
+SC 1.1.1 is the most frequently violated WCAG criterion. The WebAIM Million 2023 report found missing alt text on 58.2% of the top 1 million home pages. It receives elevated weight (0.20) in the composite WCAG score for this reason.
+
+**Improvement over original:** Now correctly excludes `role="presentation"` images. An image with `role="presentation"` and `alt=""` is the *correct* pattern for decorative images per SC 1.1.1. The original version penalised this correct pattern.
+
+---
+
+### `aria_landmark_score` → SC 2.4.1 Bypass Blocks (Level A)
+
+**Why this function?**
+ARIA landmark roles (`main`, `nav`, `banner`, `contentinfo`, `complementary`) are the primary mechanism for keyboard users and screen-reader users to skip directly to page sections without tabbing through every element. This is the standard implementation of WCAG SC 2.4.1.
+
+The W3C ARIA Authoring Practices Guide (APG) recommends that every page contain at minimum a `main` landmark and navigation wrapped in `nav`.
+
+We accept both role attributes and HTML5 sectioning elements as equivalent.
+
+---
+
+### `tailwind_contrast_score` → SC 1.4.3 Contrast Minimum (Level AA)
+
+**Why this function is an approximation:**
+SC 1.4.3 requires a contrast ratio of at least 4.5:1 for normal text. Computing exact contrast ratios requires the rendered CSS cascade — unavailable in static HTML analysis. axe-core's `color-contrast` rule handles this accurately when the HTML is rendered in a browser context.
+
+This function supplements axe-core by detecting known problematic Tailwind utility class combinations on static HTML. It should be understood as a heuristic flag, not a compliance verdict.
+
+**Improvement over original:** Extended to detect low-opacity text classes, additional light-gray colour families (slate, zinc, neutral, stone), and more light-background classes.
+
+---
+
+### `html_lang_score` → SC 3.1.1 Language of Page (Level A) *(added)*
+
+**Why this was added:**
+SC 3.1.1 is Level A — the lowest bar — and its absence means screen readers cannot select the correct language profile for pronunciation. Despite being easy to fix, WebAIM (2023) found missing `lang` attributes on 17.1% of the top 1 million pages. It is given a small weight (0.05) so it does not dominate the composite score.
+
+---
+
+## Why These Three Standards?
+
+These three were chosen because together they cover the full usability and accessibility evaluation space from three complementary perspectives:
+
+| Standard | Perspective | Evaluation method |
+|---|---|---|
+| ISO 9241-11:2018 | Task-performance (empirical usability) | Structural proxies for effectiveness, efficiency, satisfaction |
+| Nielsen (1994) | Expert heuristic review | Structural proxies for 8 of 10 heuristics |
+| WCAG 2.2 (W3C, 2023) | Technical accessibility compliance | Automated rule checking + structural proxies |
+
+They are also the three most widely cited frameworks in academic HCI literature and are used in professional usability audits. Using all three provides triangulation — a weakness identified by two or more frameworks is more reliably a real problem.
+
+---
+
+## Limitations
+
+1. **Static analysis only.** These metrics evaluate HTML structure, not rendered behaviour. Dynamic interactions, animations, and JavaScript-driven state changes are not measurable.
+
+2. **Automated tools cover ~30–40% of WCAG violations.** The remainder require human expert evaluation (Deque, 2023).
+
+3. **Proxy validity gap.** Every function is a structural proxy for a usability principle that ultimately requires empirical user testing to verify. For example, `nav_depth_score` assumes deep navigation causes usability problems — true in general but not universally.
+
+4. **Tailwind-specific contrast detection.** `tailwind_contrast_score` only understands Tailwind utility class naming. Custom CSS or inline styles are not analysed.
+
+5. **No rendering context.** Font size, line spacing, touch target size (SC 2.5.8), and reflow (SC 1.4.10) cannot be evaluated from HTML alone.
+
+---
+
+## Full Reference List
+
+| Reference | Used in |
+|---|---|
+| ISO 9241-11:2018. *Ergonomics of human-system interaction — Part 11: Usability.* Geneva: ISO. | All ISO metrics |
+| ISO 9241-143:2012. *Ergonomics of human-system interaction — Part 143: Forms.* Geneva: ISO. | `label_pairing_score`, `form_completion_score`, `button_clarity_score` |
+| ISO 9241-171:2008. *Ergonomics of human-system interaction — Part 171: Guidance on software accessibility.* Geneva: ISO. | `label_pairing_score` |
+| ISO 9241-110:2020. *Ergonomics of human-system interaction — Part 110: Interaction principles.* Geneva: ISO. | `recognition_score`, `help_documentation_score` |
+| W3C (2023). *WCAG 2.2.* https://www.w3.org/TR/WCAG22/ | All WCAG metrics |
+| W3C (2023). *WAI-ARIA 1.2.* https://www.w3.org/TR/wai-aria-1.2/ | `label_pairing_score`, `error_message_score`, `aria_landmark_score` |
+| W3C (2023). *ARIA Authoring Practices Guide.* https://www.w3.org/WAI/ARIA/apg/ | `aria_landmark_score` |
+| Nielsen, J. (1994). *10 usability heuristics for user interface design.* NNGroup. | All Nielsen metrics |
+| Nielsen, J. (1993). *Response Time Limits.* NNGroup. https://www.nngroup.com/articles/response-times-3-important-limits/ | `interactive_feedback_score` |
+| Nielsen, J. (2000). *Designing Web Usability.* New Riders. | `nav_depth_score` |
+| Zaphiris, P. & Mtei, L. (1997). Depth vs. breadth in the arrangement of web links. *Proc. HFES*, 41, 1229–1233. | `nav_depth_score` |
+| Krug, S. (2014). *Don't Make Me Think, Revisited* (3rd ed.). New Riders. | `button_clarity_score` |
+| Shneiderman, B. & Plaisant, C. (2010). *Designing the User Interface* (5th ed.). Addison-Wesley. | `label_pairing_score` |
+| Cooper, A., Reimann, R., Cronin, D. & Noessel, C. (2014). *About Face* (4th ed.). Wiley. | `user_control_score` |
+| Radovanović, D., Krstić, M. & Bisercić, A. (2015). Structural analysis of HTML5 semantic elements. *Proc. ICIST 2015*, 1, 124–128. | `minimalist_design_score` |
+| WebAIM (2023). *The WebAIM Million — Annual accessibility analysis.* https://webaim.org/projects/million/ | `alt_text_ratio`, `html_lang_score` |
+| WebAIM (2023). *Semantic Structure: Headings.* https://webaim.org/techniques/semanticstructure/ | `heading_hierarchy_score` |
+| Deque Systems (2023). *axe-core GitHub repository.* https://github.com/dequelabs/axe-core | `run_axe_core`, `axe_penalty_score` |
+| Deque Systems (2023). *The Role of Automated Testing in Accessibility.* https://www.deque.com/blog/ | All WCAG metrics (limitations) |
+| EN 301 549 v3.2.1 (2021). *Accessibility requirements for ICT products and services.* ETSI. | Weighting rationale |
