@@ -322,6 +322,50 @@ RULE 6 — ACCESSIBILITY
   - Form sections: use <fieldset> and <legend> where grouping is semantic
 
 ================================================================================
+RULE 7 — USABILITY (NIELSEN HEURISTICS — MANDATORY)
+================================================================================
+You MUST include UI elements that satisfy Nielsen usability heuristics.
+Missing these will result in an incomplete UI.
+
+H1 — Visibility of system status (REQUIRED)
+  - Include at least ONE of:
+      • Loading indicator (<progress> OR spinner placeholder)
+      • Active navigation state (aria-current="page")
+      • Selected/active class (e.g. "active", "selected")
+
+H3 — User control and freedom (REQUIRED)
+  - Include at least ONE:
+      • Cancel / Back / Reset / Clear button
+  - Forms MUST include a "Cancel" button
+
+H5 — Error prevention (REQUIRED for forms)
+  - Inputs MUST include:
+      • required attribute where appropriate
+      • type-specific inputs (email, number, date)
+      • minlength / maxlength when relevant
+
+H6 — Recognition rather than recall (REQUIRED)
+  - Include at least ONE:
+      • <select> dropdowns
+      • autocomplete attributes
+      • helper text under inputs
+      • breadcrumbs (aria-label="breadcrumb")
+
+H9 — Error handling (REQUIRED)
+  - Include at least ONE:
+      • Error message container with role="alert"
+      • Validation feedback text (e.g. "Invalid email")
+
+H10 — Help and documentation (REQUIRED)
+  - Include at least ONE:
+      • Tooltip via title attribute
+      • aria-describedby linking to help text
+      • Help link (e.g. "Need help?", "FAQ")
+      • <details> / <summary> help section
+
+Failure to include these will result in poor usability.
+
+================================================================================
 HTML BOILERPLATE
 ================================================================================
 <!DOCTYPE html>

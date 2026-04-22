@@ -101,7 +101,7 @@ def run_axe_core(html_string: str) -> list:
     Ref: Deque Systems axe-core — https://github.com/dequelabs/axe-core
     """
     if not html_string or not html_string.strip():
-        return []
+        return None
 
     temp_path = None
     try:
@@ -117,13 +117,13 @@ def run_axe_core(html_string: str) -> list:
         )
 
         if result.returncode != 0:
-            return []
+            return None
 
         data = json.loads(result.stdout)
-        return data[0].get('violations', []) if data else []
+        return data[0].get('violations', []) if data else None
 
     except Exception:
-        return []
+        return None
     finally:
         if temp_path and os.path.exists(temp_path):
             os.unlink(temp_path)
@@ -140,9 +140,15 @@ def axe_penalty_score(violations: list) -> float:
     Ref: Deque impact definitions —
     https://github.com/dequelabs/axe-core/blob/develop/doc/impact.md
     """
+    import math
+    if violations is None:
+        return None
     score = 100.0
     for v in violations:
-        score -= IMPACT_PENALTIES.get((v.get('impact') or 'minor').lower(), 2)
+        impact = (v.get('impact') or 'minor').lower()
+        penalty = IMPACT_PENALTIES.get(impact, 2)
+        node_count = len(v.get('nodes', [])) or 1
+        score -= penalty * math.log2(1 + node_count)
     return max(0.0, score)
 
 
@@ -159,13 +165,17 @@ def pour_breakdown(violations: list) -> dict:
     Ref: W3C WCAG 2.2 — Understanding the Four Principles
     https://www.w3.org/WAI/WCAG22/Understanding/intro
     """
-    return {
-        principle: max(0, 25 - sum(
+    if violations is None:
+        return {p: None for p in POUR_MAP}
+    result = {}
+    for principle, rule_ids in POUR_MAP.items():
+        penalty = sum(
             IMPACT_PENALTIES.get((v.get('impact') or 'minor').lower(), 2)
             for v in violations if v.get('id') in rule_ids
-        ))
-        for principle, rule_ids in POUR_MAP.items()
-    }
+        )
+        # Proportional decay: 25 * max(0, 1 - penalty/100)
+        result[principle] = round(25 * max(0.0, 1 - penalty / 100), 2)
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -327,37 +337,61 @@ def compute_wcag_score(html_string: str) -> dict:
     """
     if not html_string or not html_string.strip():
         return {
-            'wcag_score': 0, 'axe_score': 0, 'pour_scores': {},
+            'wcag_score': 0, 'axe_score': None, 'pour_scores': {},
             'alt_score': 0, 'landmark_score': 0, 'contrast_score': 0,
-            'lang_score': 0, 'violations_count': 0, 'weakest_pour': 'none',
+            'lang_score': 0, 'violations_count': None,
+            'weakest_pour': 'none', 'axe_available': False,
+            'reliability': 'partial',
         }
 
     soup = BeautifulSoup(html_string, 'lxml')
 
-    violations    = run_axe_core(html_string)
-    axe_score     = axe_penalty_score(violations)
-    pour_scores   = pour_breakdown(violations)
-    alt_score     = alt_text_ratio(soup)
+    violations     = run_axe_core(html_string)
+    axe_score      = axe_penalty_score(violations)   # None if axe failed
+    pour_scores    = pour_breakdown(violations)
+    alt_score      = alt_text_ratio(soup)
     landmark_score = aria_landmark_score(soup)
     contrast_score = tailwind_contrast_score(soup)
-    lang_score    = html_lang_score(soup)
+    lang_score     = html_lang_score(soup)
 
-    wcag_score = (
-        axe_score      * 0.50
-        + alt_score    * 0.20
-        + landmark_score * 0.15
-        + contrast_score * 0.10
-        + lang_score   * 0.05
-    )
+    axe_available = axe_score is not None
+
+    if axe_available:
+        # Full formula — axe result is trustworthy
+        wcag_score = (
+            axe_score      * 0.50
+            + alt_score    * 0.20
+            + landmark_score * 0.15
+            + contrast_score * 0.10
+            + lang_score   * 0.05
+        )
+        reliability = 'full'
+    else:
+        # Axe unavailable — redistribute its 50% weight proportionally
+        # among the four BS4 checks (weights: 0.20, 0.15, 0.10, 0.05 → sum 0.50)
+        # Multiplied by 2 to keep the total at 1.0
+        wcag_score = (
+            alt_score      * 0.40
+            + landmark_score * 0.30
+            + contrast_score * 0.20
+            + lang_score   * 0.10
+        )
+        reliability = 'partial'
+
+    # POUR: filter out None entries before finding minimum
+    valid_pour = {k: v for k, v in pour_scores.items() if v is not None}
+    weakest_pour = min(valid_pour, key=valid_pour.get) if valid_pour else 'unavailable'
 
     return {
-        'wcag_score':      round(wcag_score),
-        'axe_score':       axe_score,
-        'pour_scores':     pour_scores,
-        'alt_score':       alt_score,
-        'landmark_score':  landmark_score,
-        'contrast_score':  contrast_score,
-        'lang_score':      lang_score,
-        'violations_count': len(violations),
-        'weakest_pour':    min(pour_scores, key=pour_scores.get) if pour_scores else 'none',
+        'wcag_score':       round(wcag_score),
+        'axe_score':        axe_score,
+        'pour_scores':      pour_scores,
+        'alt_score':        alt_score,
+        'landmark_score':   landmark_score,
+        'contrast_score':   contrast_score,
+        'lang_score':       lang_score,
+        'violations_count': len(violations) if violations is not None else None,
+        'weakest_pour':     weakest_pour,
+        'axe_available':    axe_available,
+        'reliability':      reliability,
     }
