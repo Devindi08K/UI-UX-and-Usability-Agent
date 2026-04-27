@@ -230,7 +230,7 @@ def print_score_report(report: dict) -> None:
         sub = detail.get('sub_scores') or detail.get('pour_scores') or {}
         if sub:
             console.print(f"\n[dim]{label}:[/dim]")
-            for metric, score in sorted(sub.items(), key=lambda x: x[1]):
+            for metric, score in sorted((k, v) for k, v in sub.items() if v is not None):
                 bar = '█' * score + '░' * (4 - score) if score <= 4 else '█' * 4
                 console.print(f"  {metric:<30} {bar}  {score}")
 

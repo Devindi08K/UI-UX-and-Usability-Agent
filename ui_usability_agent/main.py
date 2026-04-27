@@ -132,6 +132,16 @@ def run_evaluation_phase():
     Evaluates all generated screens in outputs/generated_screens/.
     """
     screens_dir = "outputs/generated_screens"
+    reports_dir = "outputs/score_reports"
+    # Clean up old reports
+    if os.path.exists(reports_dir):
+        print(f"[main] Cleaning up old reports in {reports_dir}...")
+        try:
+            shutil.rmtree(reports_dir)
+        except PermissionError:
+            print(f"[main] Warning: Could not clean up {reports_dir} (directory may be in use). Continuing anyway.")
+    os.makedirs(reports_dir, exist_ok=True)
+
     if not os.path.exists(screens_dir):
         print(f"Error: {screens_dir} not found. Please generate screens first.")
         return
@@ -156,7 +166,7 @@ def run_evaluation_phase():
         print_score_report(report)
 
         # Save individual report
-        report_path = f"outputs/{screen_name}_score_report.json"
+        report_path = os.path.join(reports_dir, f"{screen_name}_score_report.json")
         save_score_report(report, report_path)
         print(f"Report saved to {report_path}")
 
