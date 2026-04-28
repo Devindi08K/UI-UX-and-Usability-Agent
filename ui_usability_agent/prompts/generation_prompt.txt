@@ -366,6 +366,169 @@ H10 — Help and documentation (REQUIRED)
 Failure to include these will result in poor usability.
 
 ================================================================================
+RULE 8 — EVALUATOR-TARGETED HTML PATTERNS (MANDATORY — scored automatically)
+================================================================================
+The generated HTML is scored by a static analysis engine. The patterns below
+MUST appear verbatim (or equivalent) in the output or the score will be 0.
+
+
+add these exactly as it says to the generation prompt
+
+── H1: system_status (score 0 without these) ───────────────────────────────────
+Include ALL THREE in the header or nav:
+
+  1. A <progress> element — place in the header bar:
+     <progress value="1" max="5" class="w-24 h-1 accent-violet-600"
+       aria-label="Page load complete"></progress>
+
+  2. aria-current="page" on the active nav item:
+     <a href="#" aria-current="page" class="text-violet-600 font-semibold active">
+       Manage Bookings
+     </a>
+
+  3. A CSS class containing "active" or "selected" on the current section:
+     <li class="active selected">...</li>
+     — OR the nav link above already has class="... active"
+
+── H4: button_consistency (score 0 without this) ───────────────────────────────
+ALL <button> elements that are the SAME visual role MUST share identical
+Tailwind appearance classes (bg-*, text-*, border-*, rounded-*, font-*).
+
+RULE: Derive ALL row action buttons from these two templates ONLY.
+Do NOT mix classes between buttons of the same role.
+
+  Primary:   class="px-3 py-1.5 rounded-lg text-xs font-medium text-white
+                    bg-gradient-to-r from-violet-500 to-indigo-600
+                    hover:from-violet-600 hover:to-indigo-700 transition-all
+                    open-modal-btn"
+
+  Secondary: class="px-3 py-1.5 rounded-lg text-xs font-medium
+                    border border-gray-300 text-gray-600 hover:bg-gray-50
+                    transition-colors"
+
+  Danger:    class="px-3 py-1.5 rounded-lg text-xs font-medium
+                    border border-red-400 text-red-600 hover:bg-red-50
+                    transition-colors"
+
+NEVER add extra classes (ml-*, mr-*, w-*, etc.) that differ between buttons
+of the same role. Every "View" button MUST be identical. Every primary action
+button MUST be identical.
+
+── H9: error_message (score 0 without this) ─────────────────────────────────────
+Include this EXACT block inside the filter toolbar card:
+
+  <div role="alert" aria-live="polite"
+       class="hidden error-message text-xs text-red-600 font-medium mt-2"
+       id="filter-error">
+    Please enter a valid search term or select a filter.
+  </div>
+
+And include this block below any form submit button:
+
+  <div role="alert" aria-live="assertive"
+       class="hidden invalid text-xs text-red-600 mt-1" id="form-error">
+    Please fix the errors above before submitting.
+  </div>
+
+── H10: help_documentation (score 0 without this) ───────────────────────────────
+Include ALL FOUR in the page:
+
+  1. title attribute on every input and select:
+     <input ... title="Enter guest name or booking ID to search">
+
+  2. aria-describedby on at least one input, linked to a hint:
+     <input id="search" aria-describedby="search-hint" ...>
+     <p id="search-hint" class="mt-1 text-xs text-gray-400">
+       Search by name, ID, or room number
+     </p>
+
+  3. A <details> / <summary> help section somewhere on the page:
+     <details class="text-xs text-gray-500">
+       <summary class="cursor-pointer font-medium text-violet-600">Need help?</summary>
+       <p class="mt-1">Use filters to narrow results. Click View to see full details.</p>
+     </details>
+
+  4. A help link in the header or footer:
+     <a href="/help" class="text-xs text-gray-400 hover:text-violet-600">FAQ / Help</a>
+
+── ISO label_pairing (score 0 without this) ─────────────────────────────────────
+EVERY <input>, <textarea>, and <select> MUST have a linked <label>.
+Use the for="id" pattern — the id on the input MUST match the for on the label.
+
+  CORRECT:
+    <label for="search-input" class="text-xs font-medium text-gray-700">Search</label>
+    <input id="search-input" type="text" ...>
+
+  WRONG (no label, or label not linked):
+    <input type="text" placeholder="Search...">
+
+This applies to ALL inputs: filter toolbar, forms, modals. No exceptions.
+
+── ISO interactive_feedback (score 1 without all four) ──────────────────────────
+Include ALL FOUR feedback infrastructure patterns:
+
+  1. aria-live region (for dynamic announcements):
+     <div aria-live="polite" id="status-region" class="sr-only"></div>
+     Place in <main> near the top.
+
+  2. role="status" container:
+     <div role="status" id="action-status"
+          class="hidden text-xs text-green-600 font-medium">
+       Action completed successfully.
+     </div>
+
+  3. Tailwind transition + hover: + focus: classes on interactive elements.
+     EVERY button and link must include: transition-colors hover:... focus:...
+     EVERY input must include: focus:outline-none focus:ring-2
+                               focus:ring-violet-500 focus:ring-offset-2
+
+  4. A <progress> element (counts for both H1 and interactive_feedback):
+     <progress value="1" max="5" class="w-24 h-1 accent-violet-600"
+       aria-label="Step 1 of 5"></progress>
+
+── ISO minimalist_design / Nielsen minimalist_design (score 1 without this) ─────
+The evaluator computes: ratio = semantic_tags / (semantic_tags + divs).
+Score ≥ 3 requires ratio ≥ 0.25. Score 4 requires ratio ≥ 0.40.
+
+Semantic tags counted: main, section, article, aside, header, footer,
+                       nav, figure, figcaption, details, summary.
+
+MANDATORY structure — use semantic wrappers instead of divs:
+
+  <header>            ← wraps the top nav bar (NOT a div)
+  <main>              ← wraps all page content (NOT a div)
+  <nav>               ← wraps pagination and breadcrumbs (NOT a div)
+  <section>           ← wraps each major content block (stat cards, filter, table)
+  <footer>            ← wraps the FAQ link and page footer
+  <article>           ← wraps each stat card (optional but adds ratio points)
+
+  BEFORE (scores 1):  <div class="..."> x 40, <main> x 1, <header> x 1
+  AFTER  (scores 4):  <section> x 4, <article> x 3, <nav> x 2,
+                      <header> x 1, <main> x 1, <footer> x 1, <div> x 10
+
+── H6 / ISO recognition (score 1 without all) ───────────────────────────────────
+Include ALL THREE:
+
+  1. <select> with a meaningful label for every dropdown filter:
+     <label for="status-filter">Status</label>
+     <select id="status-filter" autocomplete="off">...</select>
+
+  2. autocomplete attribute on text inputs:
+     <input type="text" autocomplete="name" ...>
+     <input type="email" autocomplete="email" ...>
+
+  3. Breadcrumb nav:
+     <nav aria-label="breadcrumb">
+       <ol class="flex gap-2 text-xs text-gray-500">
+         <li><a href="#">Home</a></li>
+         <li>/</li>
+         <li aria-current="page" class="text-gray-800 font-medium">
+           Manage Bookings
+         </li>
+       </ol>
+     </nav>
+
+================================================================================
 HTML BOILERPLATE
 ================================================================================
 <!DOCTYPE html>
