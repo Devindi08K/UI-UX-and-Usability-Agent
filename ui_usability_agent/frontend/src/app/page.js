@@ -14,12 +14,61 @@ export default function Home() {
   const [evaluationReports, setEvaluationReports] = useState([]);
   const [loading, setLoading] = useState({ plan: false, generate: false, evaluate: false });
   const [error, setError] = useState('');
+  const [logs, setLogs] = useState('');
+  const [outputScreens, setOutputScreens] = useState([]);
+  const [outputsLoading, setOutputsLoading] = useState(false);
+
+  const formatLogs = (logData) => {
+    if (!logData) return '';
+    const stdout = logData.stdout ? `STDOUT:\n${logData.stdout}` : '';
+    const stderr = logData.stderr ? `STDERR:\n${logData.stderr}` : '';
+    return [stdout, stderr].filter(Boolean).join('\n\n');
+  };
+
+  const loadOutputs = async () => {
+    try {
+      setOutputsLoading(true);
+      const response = await fetch('/api/outputs');
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to load outputs.');
+      }
+      setOutputScreens(data.screens || []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load outputs.');
+    } finally {
+      setOutputsLoading(false);
+    }
+  };
+
+  const previewOutput = async (screenId) => {
+    try {
+      setError('');
+      const response = await fetch(`/api/outputs?screenId=${encodeURIComponent(screenId)}`);
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to load output.');
+      }
+      setGeneratedUI(data.html || '');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load output.');
+    }
+  };
 
   const handlePlan = async () => {
     try {
       setError('');
       setLoading((prev) => ({ ...prev, plan: true }));
-      const parsedRequirements = requirements ? JSON.parse(requirements) : null;
+      if (!requirements.trim()) {
+        throw new Error('Please provide requirements JSON or upload a file.');
+      }
+
+      let parsedRequirements;
+      try {
+        parsedRequirements = JSON.parse(requirements);
+      } catch (parseError) {
+        throw new Error('Requirements must be valid JSON.');
+      }
 
       const response = await fetch('/api/plan', {
         method: 'POST',
@@ -34,6 +83,7 @@ export default function Home() {
 
       setPlanScreens(data.screens || []);
       setSelectedScreenId(data.screens?.[0]?.screen_id || '');
+      setLogs(formatLogs(data.logs));
       setActiveStep('generate');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Planning failed.');
@@ -63,7 +113,9 @@ export default function Home() {
       }
 
       setGeneratedUI(data.html || '');
+      setLogs(formatLogs(data.logs));
       setActiveStep('evaluate');
+      loadOutputs();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Generation failed.');
     } finally {
@@ -84,6 +136,7 @@ export default function Home() {
       }
 
       setEvaluationReports(data.reports || []);
+      setLogs(formatLogs(data.logs));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Evaluation failed.');
     } finally {
@@ -173,6 +226,43 @@ export default function Home() {
               >
                 {loading.generate ? 'Generating...' : 'Generate Screen'}
               </button>
+              <div className="mt-6 border-t pt-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-lg font-semibold text-accent">Generated Files</h3>
+                  <button
+                    className="text-sm text-primary hover:underline"
+                    onClick={loadOutputs}
+                    disabled={outputsLoading}
+                  >
+                    {outputsLoading ? 'Refreshing...' : 'Refresh'}
+                  </button>
+                </div>
+                {outputScreens.length === 0 ? (
+                  <p className="text-gray-500">No generated files yet.</p>
+                ) : (
+                  <ul className="space-y-2">
+                    {outputScreens.map((screenId) => (
+                      <li key={screenId} className="flex items-center justify-between border rounded-md px-3 py-2">
+                        <span className="text-sm text-gray-700">{screenId}</span>
+                        <div className="flex gap-3">
+                          <button
+                            className="text-sm text-primary hover:underline"
+                            onClick={() => previewOutput(screenId)}
+                          >
+                            Preview
+                          </button>
+                          <button
+                            className="text-sm text-primary hover:underline"
+                            onClick={() => window.open(`/preview/${screenId}`, '_blank')}
+                          >
+                            Open
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </div>
             <UIOutput generatedUI={generatedUI} />
           </div>
@@ -209,6 +299,13 @@ export default function Home() {
             </div>
           </div>
         )}
+
+        <div className="bg-white p-6 rounded-lg shadow-md mt-6">
+          <h2 className="text-xl font-semibold mb-4 text-accent">Pipeline Logs</h2>
+          <pre className="text-xs text-gray-700 whitespace-pre-wrap bg-gray-50 border rounded-md p-3 min-h-[120px]">
+            {logs || 'No logs yet.'}
+          </pre>
+        </div>
       </main>
     </div>
   );

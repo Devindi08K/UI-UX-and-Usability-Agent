@@ -36,15 +36,17 @@ export async function POST(request) {
     await fs.access(PYTHON_PATH);
     await fs.writeFile(requirementsPath, JSON.stringify(requirements, null, 2), 'utf-8');
 
-    await execFileAsync(PYTHON_PATH, [MAIN_PATH, '--plan'], { cwd: AGENT_ROOT });
+    const { stdout, stderr } = await execFileAsync(PYTHON_PATH, [MAIN_PATH, '--plan'], { cwd: AGENT_ROOT });
 
     const planPath = path.join(AGENT_ROOT, 'outputs', 'screen_plan.json');
     const planJson = await fs.readFile(planPath, 'utf-8');
 
-    return NextResponse.json({ screens: JSON.parse(planJson) });
+    return NextResponse.json({ screens: JSON.parse(planJson), logs: { stdout, stderr } });
   } catch (error) {
+    const stdout = typeof error?.stdout === 'string' ? error.stdout : '';
+    const stderr = typeof error?.stderr === 'string' ? error.stderr : '';
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Planning failed.' },
+      { error: error instanceof Error ? error.message : 'Planning failed.', logs: { stdout, stderr } },
       { status: 500 }
     );
   }

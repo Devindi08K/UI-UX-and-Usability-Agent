@@ -18,7 +18,7 @@ const MAIN_PATH = path.join(AGENT_ROOT, 'main.py');
 export async function POST() {
   try {
     await fs.access(PYTHON_PATH);
-    await execFileAsync(PYTHON_PATH, [MAIN_PATH, '--evaluate'], { cwd: AGENT_ROOT });
+    const { stdout, stderr } = await execFileAsync(PYTHON_PATH, [MAIN_PATH, '--evaluate'], { cwd: AGENT_ROOT });
 
     const reportsDir = path.join(AGENT_ROOT, 'outputs', 'score_reports');
     const files = await fs.readdir(reportsDir);
@@ -32,10 +32,12 @@ export async function POST() {
       reports.push({ screenId, report });
     }
 
-    return NextResponse.json({ reports });
+    return NextResponse.json({ reports, logs: { stdout, stderr } });
   } catch (error) {
+    const stdout = typeof error?.stdout === 'string' ? error.stdout : '';
+    const stderr = typeof error?.stderr === 'string' ? error.stderr : '';
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Evaluation failed.' },
+      { error: error instanceof Error ? error.message : 'Evaluation failed.', logs: { stdout, stderr } },
       { status: 500 }
     );
   }

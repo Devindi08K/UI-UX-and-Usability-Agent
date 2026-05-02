@@ -3,6 +3,19 @@
 import React from 'react';
 
 export default function InputForm({ requirements, onRequirementsChange, onPlan, loading }) {
+  const handleFileUpload = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        onRequirementsChange(reader.result);
+      }
+    };
+    reader.readAsText(file);
+  };
+
   const handleSubmit = () => {
     onPlan();
   };
@@ -15,6 +28,15 @@ export default function InputForm({ requirements, onRequirementsChange, onPlan, 
         placeholder="Enter JSON requirements..."
         value={requirements}
         onChange={(e) => onRequirementsChange(e.target.value)}
+      />
+      <label className="block text-sm text-gray-600 mt-3">
+        Upload requirements JSON
+      </label>
+      <input
+        type="file"
+        accept="application/json"
+        onChange={handleFileUpload}
+        className="mt-1 block w-full text-sm text-gray-600"
       />
       <button
         className="mt-4 bg-primary text-accent px-6 py-2 rounded-md hover:bg-cyan-dark transition"

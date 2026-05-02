@@ -25,15 +25,17 @@ export async function POST(request) {
     }
 
     await fs.access(PYTHON_PATH);
-    await execFileAsync(PYTHON_PATH, [MAIN_PATH, '--generate', screenId], { cwd: AGENT_ROOT });
+    const { stdout, stderr } = await execFileAsync(PYTHON_PATH, [MAIN_PATH, '--generate', screenId], { cwd: AGENT_ROOT });
 
     const htmlPath = path.join(AGENT_ROOT, 'outputs', 'generated_screens', `${screenId}.html`);
     const html = await fs.readFile(htmlPath, 'utf-8');
 
-    return NextResponse.json({ screenId, html });
+    return NextResponse.json({ screenId, html, logs: { stdout, stderr } });
   } catch (error) {
+    const stdout = typeof error?.stdout === 'string' ? error.stdout : '';
+    const stderr = typeof error?.stderr === 'string' ? error.stderr : '';
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Generation failed.' },
+      { error: error instanceof Error ? error.message : 'Generation failed.', logs: { stdout, stderr } },
       { status: 500 }
     );
   }
