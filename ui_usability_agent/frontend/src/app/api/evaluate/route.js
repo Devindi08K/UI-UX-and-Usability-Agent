@@ -15,10 +15,16 @@ const WORKSPACE_ROOT = path.resolve(AGENT_ROOT, '..');
 const PYTHON_PATH = path.join(WORKSPACE_ROOT, '.venv', 'Scripts', 'python.exe');
 const MAIN_PATH = path.join(AGENT_ROOT, 'main.py');
 
-export async function POST() {
+export async function POST(request) {
   try {
+    const body = await request.json();
+    const screenIds = body.screenIds || [];
+
     await fs.access(PYTHON_PATH);
-    const { stdout, stderr } = await execFileAsync(PYTHON_PATH, [MAIN_PATH, '--evaluate'], { cwd: AGENT_ROOT });
+    const { stdout, stderr } = await execFileAsync(PYTHON_PATH, [MAIN_PATH, '--evaluate'], {
+      cwd: AGENT_ROOT,
+      env: { ...process.env, PYTHONIOENCODING: 'utf-8' }
+    });
 
     const reportsDir = path.join(AGENT_ROOT, 'outputs', 'score_reports');
     const files = await fs.readdir(reportsDir);
@@ -26,9 +32,10 @@ export async function POST() {
 
     for (const file of files) {
       if (!file.endsWith('_score_report.json')) continue;
+      const screenId = file.replace('_score_report.json', '');
+      if (screenIds.length > 0 && !screenIds.includes(screenId)) continue; // Filter if specific screens requested
       const reportJson = await fs.readFile(path.join(reportsDir, file), 'utf-8');
       const report = JSON.parse(reportJson);
-      const screenId = file.replace('_score_report.json', '');
       reports.push({ screenId, report });
     }
 

@@ -17,6 +17,8 @@ export default function Home() {
   const [logs, setLogs] = useState('');
   const [outputScreens, setOutputScreens] = useState([]);
   const [outputsLoading, setOutputsLoading] = useState(false);
+  const [reportsLoading, setReportsLoading] = useState(false);
+  const [selectedScreensForEval, setSelectedScreensForEval] = useState([]);
 
   const formatLogs = (logData) => {
     if (!logData) return '';
@@ -52,6 +54,22 @@ export default function Home() {
       setGeneratedUI(data.html || '');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load output.');
+    }
+  };
+
+  const loadReports = async () => {
+    try {
+      setReportsLoading(true);
+      const response = await fetch('/api/reports');
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to load reports.');
+      }
+      setEvaluationReports(data.reports || []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load reports.');
+    } finally {
+      setReportsLoading(false);
     }
   };
 
@@ -128,7 +146,12 @@ export default function Home() {
       setError('');
       setLoading((prev) => ({ ...prev, evaluate: true }));
 
-      const response = await fetch('/api/evaluate', { method: 'POST' });
+      const body = selectedScreensForEval.length > 0 ? { screenIds: selectedScreensForEval } : {};
+      const response = await fetch('/api/evaluate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
       const data = await response.json();
 
       if (!response.ok) {
@@ -137,6 +160,7 @@ export default function Home() {
 
       setEvaluationReports(data.reports || []);
       setLogs(formatLogs(data.logs));
+      loadReports();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Evaluation failed.');
     } finally {
@@ -271,8 +295,19 @@ export default function Home() {
         {activeStep === 'evaluate' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-white p-6 rounded-lg shadow-md">
-              <h2 className="text-xl font-semibold mb-4 text-accent">Evaluate Screens</h2>
-              <p className="text-gray-600 mb-4">Runs the evaluation pipeline on all generated screens.</p>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold text-accent">Evaluate Screens</h2>
+                <button
+                  className="text-sm text-primary hover:underline"
+                  onClick={() => {
+                    loadOutputs();
+                    loadReports();
+                  }}
+                >
+                  Refresh lists
+                </button>
+              </div>
+              <p className="text-gray-600 mb-4">Select screens to evaluate (or leave empty to evaluate all).</p>
               <button
                 className="bg-primary text-accent px-6 py-2 rounded-md hover:bg-cyan-dark transition"
                 onClick={handleEvaluate}
@@ -280,9 +315,84 @@ export default function Home() {
               >
                 {loading.evaluate ? 'Evaluating...' : 'Run Evaluation'}
               </button>
+              <div className="mt-6 border-t pt-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-lg font-semibold text-accent">Generated Screens</h3>
+                  <button
+                    className="text-sm text-primary hover:underline"
+                    onClick={loadOutputs}
+                    disabled={outputsLoading}
+                  >
+                    {outputsLoading ? 'Refreshing...' : 'Refresh'}
+                  </button>
+                </div>
+                {outputScreens.length === 0 ? (
+                  <p className="text-gray-500">No generated files yet.</p>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 mb-3">
+                      <input
+                        type="checkbox"
+                        id="select-all"
+                        checked={selectedScreensForEval.length === outputScreens.length}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedScreensForEval(outputScreens);
+                          } else {
+                            setSelectedScreensForEval([]);
+                          }
+                        }}
+                      />
+                      <label htmlFor="select-all" className="text-sm text-gray-700">Select All</label>
+                    </div>
+                    {outputScreens.map((screenId) => (
+                      <div key={screenId} className="flex items-center justify-between border rounded-md px-3 py-2">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            id={`screen-${screenId}`}
+                            checked={selectedScreensForEval.includes(screenId)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedScreensForEval((prev) => [...prev, screenId]);
+                              } else {
+                                setSelectedScreensForEval((prev) => prev.filter((id) => id !== screenId));
+                              }
+                            }}
+                          />
+                          <label htmlFor={`screen-${screenId}`} className="text-sm text-gray-700">{screenId}</label>
+                        </div>
+                        <div className="flex gap-3">
+                          <button
+                            className="text-sm text-primary hover:underline"
+                            onClick={() => previewOutput(screenId)}
+                          >
+                            Preview
+                          </button>
+                          <button
+                            className="text-sm text-primary hover:underline"
+                            onClick={() => window.open(`/preview/${screenId}`, '_blank')}
+                          >
+                            Open
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
             <div className="bg-white p-6 rounded-lg shadow-md">
-              <h2 className="text-xl font-semibold mb-4 text-accent">Score Reports</h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold text-accent">Score Reports</h2>
+                <button
+                  className="text-sm text-primary hover:underline"
+                  onClick={loadReports}
+                  disabled={reportsLoading}
+                >
+                  {reportsLoading ? 'Refreshing...' : 'Refresh'}
+                </button>
+              </div>
               {evaluationReports.length === 0 ? (
                 <p className="text-gray-500">No reports yet.</p>
               ) : (
