@@ -2,14 +2,15 @@ import json
 import os
 from typing import List,Dict
 from dotenv import load_dotenv
-from langchain_groq import ChatGroq
+# from langchain_groq import ChatGroq  # Commented out for Ollama
+from langchain_ollama import ChatOllama
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 
 # Load environment variables and validate API key
 load_dotenv()
-if not os.getenv("GROQ_API_KEY"):
-    raise ValueError("GROQ_API_KEY not found in .env file. Please add it.")
+# if not os.getenv("GROQ_API_KEY"):  # Commented out for Ollama
+#     raise ValueError("GROQ_API_KEY not found in .env file. Please add it.")
 
 SCREEN_PLANNER_PROMPT = """You are a senior software architect. 
 Given a system description and its requirements, your job is to identify ALL the screens/pages that need to be built for this system.
@@ -45,10 +46,10 @@ def plan_screens(system_input: Dict) -> List[Dict]:
     """
     Takes the full system input and returns an ordered list of screens to build.
     """
-    llm = ChatGroq(
-        model = "llama-3.3-70b-versatile", 
+    llm = ChatOllama(
+        model = "llama3.2:3b", 
         temperature=0.4,
-        max_tokens=4096                  
+        num_ctx=4096                  
     )
     prompt = ChatPromptTemplate.from_template(SCREEN_PLANNER_PROMPT)
     chain = prompt | llm | StrOutputParser()

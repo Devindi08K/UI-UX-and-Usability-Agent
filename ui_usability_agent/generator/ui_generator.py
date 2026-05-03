@@ -1,8 +1,9 @@
-# Sends prompt to Groq, gets HTML back
+# Sends prompt to Ollama, gets HTML back
 import os
 import json
 from dotenv import load_dotenv
-from langchain_groq import ChatGroq
+# from langchain_groq import ChatGroq  # Commented out for Ollama
+from langchain_ollama import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
@@ -10,11 +11,11 @@ from langchain_core.output_parsers import StrOutputParser
 load_dotenv()
 
 def get_llm():
-    """Create and return a ChatGroq instance"""
-    return ChatGroq(
-        model = "llama-3.3-70b-versatile",
+    """Create and return a ChatOllama instance"""
+    return ChatOllama(
+        model = "llama3.2:3b",
         temperature=0.4,                    # 0 = exact, 1 = creative (lower for structured output)
-        max_tokens=4096                     #limit response length (increased for complete accessibility notes)
+        num_ctx=4096                     #limit response length (increased for complete accessibility notes)
 
     )
 
