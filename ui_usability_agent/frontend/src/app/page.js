@@ -398,11 +398,15 @@ export default function Home() {
               ) : (
                 <div className="space-y-4">
                   {evaluationReports.map(({ screenId, report }) => (
-                    <div key={screenId} className="border rounded-md p-3">
+                    <a
+                      key={screenId}
+                      href={`/reports/${screenId}`}
+                      className="block border rounded-md p-3 hover:bg-gray-50 transition-colors cursor-pointer"
+                    >
                       <div className="font-semibold text-primary">{screenId}</div>
                       <div className="text-sm text-gray-600">Total: {report.total_score} · ISO: {report.iso_score} · Nielsen: {report.nielsen_score} · WCAG: {report.wcag_score}</div>
                       <div className="text-sm text-gray-500">Weakest: {report.weakest_standard} / {report.weakest_metric}</div>
-                    </div>
+                    </a>
                   ))}
                 </div>
               )}

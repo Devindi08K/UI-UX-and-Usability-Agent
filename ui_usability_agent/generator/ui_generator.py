@@ -2,22 +2,26 @@
 import os
 import json
 from dotenv import load_dotenv
-# from langchain_groq import ChatGroq  # Commented out for Ollama
-from langchain_ollama import ChatOllama
+from langchain_groq import ChatGroq
+# from langchain_ollama import ChatOllama  # Commented out for Groq
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
 #load secret key from .env file
 load_dotenv()
+if not os.getenv("GROQ_API_KEY"):
+    raise ValueError("GROQ_API_KEY not found in .env file. Please add it.")
+
+# For HTML generation (quality matters)
+gen_llm = ChatGroq(
+    model="llama-3.3-70b-versatile",
+    temperature=0.4,
+    max_tokens=4000,
+)
 
 def get_llm():
-    """Create and return a ChatOllama instance"""
-    return ChatOllama(
-        model = "llama3.2:3b",
-        temperature=0.4,                    # 0 = exact, 1 = creative (lower for structured output)
-        num_ctx=4096                     #limit response length (increased for complete accessibility notes)
-
-    )
+    """Create and return a ChatGroq instance"""
+    return gen_llm
 
 def generate_ui(requirements: dict, screen_type: str) -> str:
     """

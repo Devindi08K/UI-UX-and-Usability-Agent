@@ -3,5 +3,5 @@ lxml
 requests
 jinja2
 rich
-langchain-ollama
+langchain-groq
 python-dotenv
