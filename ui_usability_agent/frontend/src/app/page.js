@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Header from '../components/Header';
 import InputForm from '../components/InputForm';
 import UIOutput from '../components/UIOutput';
+import DocumentationTabs from '../components/DocumentationTabs';
 
 export default function Home() {
   const [activeStep, setActiveStep] = useState('plan');
@@ -419,6 +420,10 @@ export default function Home() {
           <pre className="text-xs text-gray-700 whitespace-pre-wrap bg-gray-50 border rounded-md p-3 min-h-[120px]">
             {logs || 'No logs yet.'}
           </pre>
+        </div>
+
+        <div className="mt-8">
+          <DocumentationTabs />
         </div>
       </main>
     </div>
