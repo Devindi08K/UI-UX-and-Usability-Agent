@@ -170,24 +170,24 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral text-accent">
+    <div className="min-h-screen bg-dark-bg text-text-primary">
       <Header />
       <main className="container mx-auto p-6">
         <div className="flex flex-wrap gap-3 mb-6">
           <button
-            className={`px-4 py-2 rounded-full border ${activeStep === 'plan' ? 'bg-primary text-accent' : 'bg-white text-gray-700'}`}
+            className={`px-4 py-2 rounded-full border transition ${activeStep === 'plan' ? 'bg-primary text-dark-bg font-semibold' : 'bg-dark-card border-dark-hover text-text-primary hover:border-primary'}`}
             onClick={() => setActiveStep('plan')}
           >
             1. Planning
           </button>
           <button
-            className={`px-4 py-2 rounded-full border ${activeStep === 'generate' ? 'bg-primary text-accent' : 'bg-white text-gray-700'}`}
+            className={`px-4 py-2 rounded-full border transition ${activeStep === 'generate' ? 'bg-primary text-dark-bg font-semibold' : 'bg-dark-card border-dark-hover text-text-primary hover:border-primary'}`}
             onClick={() => setActiveStep('generate')}
           >
             2. Generation
           </button>
           <button
-            className={`px-4 py-2 rounded-full border ${activeStep === 'evaluate' ? 'bg-primary text-accent' : 'bg-white text-gray-700'}`}
+            className={`px-4 py-2 rounded-full border transition ${activeStep === 'evaluate' ? 'bg-primary text-dark-bg font-semibold' : 'bg-dark-card border-dark-hover text-text-primary hover:border-primary'}`}
             onClick={() => setActiveStep('evaluate')}
           >
             3. Evaluation
@@ -195,7 +195,7 @@ export default function Home() {
         </div>
 
         {error && (
-          <div className="mb-4 bg-red-100 text-red-700 border border-red-200 p-3 rounded">
+          <div className="mb-4 bg-red-900 text-red-100 border border-red-700 p-3 rounded">
             {error}
           </div>
         )}
@@ -208,17 +208,17 @@ export default function Home() {
               onPlan={handlePlan}
               loading={loading.plan}
             />
-            <div className="bg-white p-6 rounded-lg shadow-md">
-              <h2 className="text-xl font-semibold mb-4 text-accent">Planned Screens</h2>
+            <div className="bg-dark-card p-6 rounded-lg shadow-md border border-dark-hover">
+              <h2 className="text-xl font-semibold mb-4 text-primary">Planned Screens</h2>
               {planScreens.length === 0 ? (
-                <p className="text-gray-500">No screen plan yet.</p>
+                <p className="text-text-secondary">No screen plan yet.</p>
               ) : (
                 <ul className="space-y-3">
                   {planScreens.map((screen) => (
-                    <li key={screen.screen_id} className="border rounded-md p-3">
+                    <li key={screen.screen_id} className="border border-dark-hover rounded-md p-3 bg-dark-bg hover:bg-dark-hover transition">
                       <div className="font-semibold text-primary">{screen.screen_name}</div>
-                      <div className="text-sm text-gray-600">{screen.screen_id} · {screen.screen_type}</div>
-                      <div className="text-sm text-gray-500 mt-1">{screen.purpose}</div>
+                      <div className="text-sm text-text-secondary">{screen.screen_id} · {screen.screen_type}</div>
+                      <div className="text-sm text-neutral mt-1">{screen.purpose}</div>
                     </li>
                   ))}
                 </ul>
@@ -229,11 +229,11 @@ export default function Home() {
 
         {activeStep === 'generate' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white p-6 rounded-lg shadow-md">
-              <h2 className="text-xl font-semibold mb-4 text-accent">Generate UI</h2>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Select screen</label>
+            <div className="bg-dark-card p-6 rounded-lg shadow-md border border-dark-hover">
+              <h2 className="text-xl font-semibold mb-4 text-primary">Generate UI</h2>
+              <label className="block text-sm font-medium text-text-secondary mb-2">Select screen</label>
               <select
-                className="w-full p-2 border border-gray-300 rounded-md"
+                className="w-full p-2 border border-dark-hover bg-dark-bg text-text-primary rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                 value={selectedScreenId}
                 onChange={(e) => setSelectedScreenId(e.target.value)}
               >
@@ -245,17 +245,17 @@ export default function Home() {
                 ))}
               </select>
               <button
-                className="mt-4 bg-primary text-accent px-6 py-2 rounded-md hover:bg-cyan-dark transition"
+                className="mt-4 bg-primary text-dark-bg px-6 py-2 rounded-md hover:bg-primary-light transition font-semibold"
                 onClick={handleGenerate}
                 disabled={loading.generate}
               >
                 {loading.generate ? 'Generating...' : 'Generate Screen'}
               </button>
-              <div className="mt-6 border-t pt-4">
+              <div className="mt-6 border-t border-dark-hover pt-4">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-lg font-semibold text-accent">Generated Files</h3>
+                  <h3 className="text-lg font-semibold text-primary">Generated Files</h3>
                   <button
-                    className="text-sm text-primary hover:underline"
+                    className="text-sm text-primary hover:text-primary-light transition"
                     onClick={loadOutputs}
                     disabled={outputsLoading}
                   >
@@ -263,21 +263,21 @@ export default function Home() {
                   </button>
                 </div>
                 {outputScreens.length === 0 ? (
-                  <p className="text-gray-500">No generated files yet.</p>
+                  <p className="text-text-secondary">No generated files yet.</p>
                 ) : (
                   <ul className="space-y-2">
                     {outputScreens.map((screenId) => (
-                      <li key={screenId} className="flex items-center justify-between border rounded-md px-3 py-2">
-                        <span className="text-sm text-gray-700">{screenId}</span>
+                      <li key={screenId} className="flex items-center justify-between border border-dark-hover rounded-md px-3 py-2 bg-dark-bg hover:bg-dark-hover transition">
+                        <span className="text-sm text-text-secondary">{screenId}</span>
                         <div className="flex gap-3">
                           <button
-                            className="text-sm text-primary hover:underline"
+                            className="text-sm text-primary hover:text-primary-light transition"
                             onClick={() => previewOutput(screenId)}
                           >
                             Preview
                           </button>
                           <button
-                            className="text-sm text-primary hover:underline"
+                            className="text-sm text-primary hover:text-primary-light transition"
                             onClick={() => window.open(`/preview/${screenId}`, '_blank')}
                           >
                             Open
@@ -295,11 +295,11 @@ export default function Home() {
 
         {activeStep === 'evaluate' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white p-6 rounded-lg shadow-md">
+            <div className="bg-dark-card p-6 rounded-lg shadow-md border border-dark-hover">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold text-accent">Evaluate Screens</h2>
+                <h2 className="text-xl font-semibold text-primary">Evaluate Screens</h2>
                 <button
-                  className="text-sm text-primary hover:underline"
+                  className="text-sm text-primary hover:text-primary-light transition"
                   onClick={() => {
                     loadOutputs();
                     loadReports();
@@ -308,19 +308,19 @@ export default function Home() {
                   Refresh lists
                 </button>
               </div>
-              <p className="text-gray-600 mb-4">Select screens to evaluate (or leave empty to evaluate all).</p>
+              <p className="text-text-secondary mb-4">Select screens to evaluate (or leave empty to evaluate all).</p>
               <button
-                className="bg-primary text-accent px-6 py-2 rounded-md hover:bg-cyan-dark transition"
+                className="bg-primary text-dark-bg px-6 py-2 rounded-md hover:bg-primary-light transition font-semibold"
                 onClick={handleEvaluate}
                 disabled={loading.evaluate}
               >
                 {loading.evaluate ? 'Evaluating...' : 'Run Evaluation'}
               </button>
-              <div className="mt-6 border-t pt-4">
+              <div className="mt-6 border-t border-dark-hover pt-4">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-lg font-semibold text-accent">Generated Screens</h3>
+                  <h3 className="text-lg font-semibold text-primary">Generated Screens</h3>
                   <button
-                    className="text-sm text-primary hover:underline"
+                    className="text-sm text-primary hover:text-primary-light transition"
                     onClick={loadOutputs}
                     disabled={outputsLoading}
                   >
@@ -328,7 +328,7 @@ export default function Home() {
                   </button>
                 </div>
                 {outputScreens.length === 0 ? (
-                  <p className="text-gray-500">No generated files yet.</p>
+                  <p className="text-text-secondary">No generated files yet.</p>
                 ) : (
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 mb-3">
@@ -343,11 +343,12 @@ export default function Home() {
                             setSelectedScreensForEval([]);
                           }
                         }}
+                        className="bg-dark-bg border border-dark-hover"
                       />
-                      <label htmlFor="select-all" className="text-sm text-gray-700">Select All</label>
+                      <label htmlFor="select-all" className="text-sm text-text-secondary">Select All</label>
                     </div>
                     {outputScreens.map((screenId) => (
-                      <div key={screenId} className="flex items-center justify-between border rounded-md px-3 py-2">
+                      <div key={screenId} className="flex items-center justify-between border border-dark-hover rounded-md px-3 py-2 bg-dark-bg hover:bg-dark-hover transition">
                         <div className="flex items-center gap-2">
                           <input
                             type="checkbox"
@@ -360,18 +361,19 @@ export default function Home() {
                                 setSelectedScreensForEval((prev) => prev.filter((id) => id !== screenId));
                               }
                             }}
+                            className="bg-dark-bg border border-dark-hover"
                           />
-                          <label htmlFor={`screen-${screenId}`} className="text-sm text-gray-700">{screenId}</label>
+                          <label htmlFor={`screen-${screenId}`} className="text-sm text-text-secondary">{screenId}</label>
                         </div>
                         <div className="flex gap-3">
                           <button
-                            className="text-sm text-primary hover:underline"
+                            className="text-sm text-primary hover:text-primary-light transition"
                             onClick={() => previewOutput(screenId)}
                           >
                             Preview
                           </button>
                           <button
-                            className="text-sm text-primary hover:underline"
+                            className="text-sm text-primary hover:text-primary-light transition"
                             onClick={() => window.open(`/preview/${screenId}`, '_blank')}
                           >
                             Open
@@ -383,11 +385,11 @@ export default function Home() {
                 )}
               </div>
             </div>
-            <div className="bg-white p-6 rounded-lg shadow-md">
+            <div className="bg-dark-card p-6 rounded-lg shadow-md border border-dark-hover">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold text-accent">Score Reports</h2>
+                <h2 className="text-xl font-semibold text-primary">Score Reports</h2>
                 <button
-                  className="text-sm text-primary hover:underline"
+                  className="text-sm text-primary hover:text-primary-light transition"
                   onClick={loadReports}
                   disabled={reportsLoading}
                 >
@@ -395,18 +397,18 @@ export default function Home() {
                 </button>
               </div>
               {evaluationReports.length === 0 ? (
-                <p className="text-gray-500">No reports yet.</p>
+                <p className="text-text-secondary">No reports yet.</p>
               ) : (
                 <div className="space-y-4">
                   {evaluationReports.map(({ screenId, report }) => (
                     <a
                       key={screenId}
                       href={`/reports/${screenId}`}
-                      className="block border rounded-md p-3 hover:bg-gray-50 transition-colors cursor-pointer"
+                      className="block border border-dark-hover rounded-md p-3 bg-dark-bg hover:bg-dark-hover transition-colors cursor-pointer"
                     >
                       <div className="font-semibold text-primary">{screenId}</div>
-                      <div className="text-sm text-gray-600">Total: {report.total_score} · ISO: {report.iso_score} · Nielsen: {report.nielsen_score} · WCAG: {report.wcag_score}</div>
-                      <div className="text-sm text-gray-500">Weakest: {report.weakest_standard} / {report.weakest_metric}</div>
+                      <div className="text-sm text-text-secondary">Total: {report.total_score} · ISO: {report.iso_score} · Nielsen: {report.nielsen_score} · WCAG: {report.wcag_score}</div>
+                      <div className="text-sm text-neutral">Weakest: {report.weakest_standard} / {report.weakest_metric}</div>
                     </a>
                   ))}
                 </div>
@@ -415,9 +417,9 @@ export default function Home() {
           </div>
         )}
 
-        <div className="bg-white p-6 rounded-lg shadow-md mt-6">
-          <h2 className="text-xl font-semibold mb-4 text-accent">Pipeline Logs</h2>
-          <pre className="text-xs text-gray-700 whitespace-pre-wrap bg-gray-50 border rounded-md p-3 min-h-[120px]">
+        <div className="bg-dark-card p-6 rounded-lg shadow-md mt-6 border border-dark-hover">
+          <h2 className="text-xl font-semibold mb-4 text-primary">Pipeline Logs</h2>
+          <pre className="text-xs text-text-secondary whitespace-pre-wrap bg-dark-bg border border-dark-hover rounded-md p-3 min-h-[120px] overflow-auto">
             {logs || 'No logs yet.'}
           </pre>
         </div>

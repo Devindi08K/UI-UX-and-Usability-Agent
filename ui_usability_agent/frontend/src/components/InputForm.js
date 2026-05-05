@@ -21,25 +21,25 @@ export default function InputForm({ requirements, onRequirementsChange, onPlan, 
   };
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md">
-      <h2 className="text-xl font-semibold mb-4 text-accent">Input Requirements</h2>
+    <div className="bg-dark-card p-6 rounded-lg shadow-md border border-dark-hover">
+      <h2 className="text-xl font-semibold mb-4 text-primary">Input Requirements</h2>
       <textarea
-        className="w-full h-40 p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+        className="w-full h-40 p-3 bg-dark-bg border border-dark-hover rounded-md text-text-primary focus:outline-none focus:ring-2 focus:ring-primary placeholder-neutral"
         placeholder="Enter JSON requirements..."
         value={requirements}
         onChange={(e) => onRequirementsChange(e.target.value)}
       />
-      <label className="block text-sm text-gray-600 mt-3">
+      <label className="block text-sm text-text-secondary mt-3">
         Upload requirements JSON
       </label>
       <input
         type="file"
         accept="application/json"
         onChange={handleFileUpload}
-        className="mt-1 block w-full text-sm text-gray-600"
+        className="mt-1 block w-full text-sm text-text-secondary"
       />
       <button
-        className="mt-4 bg-primary text-accent px-6 py-2 rounded-md hover:bg-cyan-dark transition"
+        className="mt-4 bg-primary text-dark-bg px-6 py-2 rounded-md hover:bg-primary-light transition font-semibold"
         onClick={handleSubmit}
         disabled={loading}
       >

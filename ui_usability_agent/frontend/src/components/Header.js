@@ -1,8 +1,8 @@
 export default function Header() {
   return (
-    <header className="bg-accent text-secondary p-6 shadow-lg">
+    <header className="bg-dark-card border-b border-dark-hover shadow-lg p-6">
       <h1 className="text-3xl font-bold text-primary">UI/UX Usability Agent</h1>
-      <p className="text-gray-dark">Generate and Evaluate UI Prototypes</p>
+      <p className="text-text-secondary text-sm mt-1">Generate and Evaluate UI Prototypes</p>
     </header>
   );
 }

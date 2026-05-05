@@ -8,12 +8,19 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: '#00FFFF', // Cyan
-        secondary: '#FFFFFF', // White
-        accent: '#000000', // Black
-        neutral: '#F3F4F6', // Light gray
-        'cyan-dark': '#00BFFF', // Dark cyan
-        'gray-dark': '#374151', // Dark gray
+        // Dark theme with cyan accents
+        'dark-bg': '#0f172a', // Deep navy background
+        'dark-card': '#1e293b', // Dark slate for cards
+        'dark-hover': '#334155', // Lighter slate for hover
+        primary: '#06b6d4', // Vibrant cyan
+        'primary-light': '#22d3ee', // Light cyan
+        'primary-dark': '#0891b2', // Dark cyan
+        secondary: '#e2e8f0', // Light gray/white
+        accent: '#f0f9fa', // Very light cyan tint
+        neutral: '#64748b', // Medium gray
+        'text-primary': '#f1f5f9', // Nearly white text
+        'text-secondary': '#cbd5e1', // Light gray text
+        'text-dark-bg': '#ffffff', // White text for dark backgrounds
       },
     },
   },
