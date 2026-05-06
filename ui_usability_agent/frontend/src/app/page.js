@@ -175,19 +175,19 @@ export default function Home() {
       <main className="container mx-auto p-6">
         <div className="flex flex-wrap gap-3 mb-6">
           <button
-            className={`px-4 py-2 rounded-full border transition ${activeStep === 'plan' ? 'bg-primary text-dark-bg font-semibold' : 'bg-dark-card border-dark-hover text-text-primary hover:border-primary'}`}
+            className={`px-4 py-2 rounded-full border transition ${activeStep === 'plan' ? 'bg-primary-dark text-dark-bg font-semibold' : 'bg-dark-card border-dark-hover text-text-primary hover:border-primary'}`}
             onClick={() => setActiveStep('plan')}
           >
             1. Planning
           </button>
           <button
-            className={`px-4 py-2 rounded-full border transition ${activeStep === 'generate' ? 'bg-primary text-dark-bg font-semibold' : 'bg-dark-card border-dark-hover text-text-primary hover:border-primary'}`}
+            className={`px-4 py-2 rounded-full border transition ${activeStep === 'generate' ? 'bg-primary-dark text-dark-bg font-semibold' : 'bg-dark-card border-dark-hover text-text-primary hover:border-primary'}`}
             onClick={() => setActiveStep('generate')}
           >
             2. Generation
           </button>
           <button
-            className={`px-4 py-2 rounded-full border transition ${activeStep === 'evaluate' ? 'bg-primary text-dark-bg font-semibold' : 'bg-dark-card border-dark-hover text-text-primary hover:border-primary'}`}
+            className={`px-4 py-2 rounded-full border transition ${activeStep === 'evaluate' ? 'bg-primary-dark text-dark-bg font-semibold' : 'bg-dark-card border-dark-hover text-text-primary hover:border-primary'}`}
             onClick={() => setActiveStep('evaluate')}
           >
             3. Evaluation
@@ -245,7 +245,7 @@ export default function Home() {
                 ))}
               </select>
               <button
-                className="mt-4 bg-primary text-dark-bg px-6 py-2 rounded-md hover:bg-primary-light transition font-semibold"
+                className="mt-4 bg-primary text-black px-6 py-2 rounded-md hover:bg-primary-light transition font-semibold"
                 onClick={handleGenerate}
                 disabled={loading.generate}
               >
@@ -310,7 +310,7 @@ export default function Home() {
               </div>
               <p className="text-text-secondary mb-4">Select screens to evaluate (or leave empty to evaluate all).</p>
               <button
-                className="bg-primary text-dark-bg px-6 py-2 rounded-md hover:bg-primary-light transition font-semibold"
+                className="bg-primary text-black px-6 py-2 rounded-md hover:bg-primary-light transition font-semibold"
                 onClick={handleEvaluate}
                 disabled={loading.evaluate}
               >

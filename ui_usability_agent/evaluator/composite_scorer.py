@@ -246,6 +246,20 @@ def _print_plain_report(report: dict) -> None:
     print(f"Status      :  {'PASSED' if report.get('passed') else 'NEEDS REFINEMENT'}")
     print(f"Weakest     :  {report.get('weakest_standard', 'N/A')} → {report.get('weakest_metric', 'N/A')}")
 
+    # Sub-score breakdown per standard
+    for label, key, detail_key in [
+        ('ISO sub-scores',     'iso_score',     'iso_details'),
+        ('Nielsen sub-scores', 'nielsen_score', 'nielsen_details'),
+        ('WCAG sub-scores',    'wcag_score',    'wcag_details'),
+    ]:
+        detail = report.get(detail_key, {})
+        sub = detail.get('sub_scores') or detail.get('pour_scores') or {}
+        if sub:
+            print(f"\n{label}:")
+            for metric, score in sorted((k, v) for k, v in sub.items() if v is not None):
+                bar = '█' * min(score, 4) + '░' * max(0, 4 - score) if score <= 4 else '█' * 4
+                print(f"  {metric:<30} {bar}  {score}")
+
 
 # ---------------------------------------------------------------------------
 # Persistence

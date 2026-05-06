@@ -30,3 +30,20 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Custom select styling for dark theme */
+select {
+  background-color: #0f172a !important; /* dark-bg */
+  color: #f1f5f9 !important; /* text-primary */
+  border: 1px solid #334155 !important; /* dark-hover */
+}
+
+select option {
+  background-color: #0f172a !important; /* dark-bg */
+  color: #f1f5f9 !important; /* text-primary */
+}
+
+select:focus {
+  outline: 2px solid #06b6d4 !important; /* primary */
+  outline-offset: 2px;
+}

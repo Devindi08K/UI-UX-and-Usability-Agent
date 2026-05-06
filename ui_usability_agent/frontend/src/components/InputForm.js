@@ -39,7 +39,7 @@ export default function InputForm({ requirements, onRequirementsChange, onPlan, 
         className="mt-1 block w-full text-sm text-text-secondary"
       />
       <button
-        className="mt-4 bg-primary text-dark-bg px-6 py-2 rounded-md hover:bg-primary-light transition font-semibold"
+        className="mt-4 bg-primary text-black px-6 py-2 rounded-md hover:bg-primary-light transition font-semibold"
         onClick={handleSubmit}
         disabled={loading}
       >

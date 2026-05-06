@@ -202,7 +202,7 @@ export default function ReportPage() {
         <div className="bg-dark-card border border-dark-hover rounded-lg shadow-sm p-6">
           <Link
             href={`/preview/${screenId}`}
-            className="inline-flex items-center px-4 py-2 bg-primary text-dark-bg rounded-lg hover:bg-primary/90 transition-colors font-semibold"
+            className="inline-flex items-center px-4 py-2 bg-primary text-black rounded-lg hover:bg-primary/90 transition-colors font-semibold"
           >
             View Screen Preview
           </Link>

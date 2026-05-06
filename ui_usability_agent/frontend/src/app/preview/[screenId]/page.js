@@ -85,7 +85,7 @@ export default function PreviewPage() {
               <a
                 key={id}
                 href={`/preview/${id}`}
-                className={`block rounded-md border px-3 py-2 text-sm transition ${id === screenId ? 'border-primary bg-primary bg-opacity-20 text-primary' : 'border-dark-hover text-text-secondary hover:border-primary'}`}
+                className={`block rounded-md border px-3 py-2 text-sm transition ${id === screenId ? 'border-primary bg-primary bg-opacity-20 text-black' : 'border-dark-hover text-text-secondary hover:border-primary'}`}
               >
                 {id}
               </a>

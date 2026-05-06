@@ -22,8 +22,8 @@ export default function DocumentationTabs() {
             onClick={() => setActiveTab(tab.id)}
             className={`flex-1 px-4 py-3 font-semibold text-center transition ${
               activeTab === tab.id
-                ? 'bg-primary text-dark-bg'
-                : 'bg-dark-hover text-text-secondary hover:bg-dark-hover'
+                ? 'bg-primary-dark text-dark-bg'
+                : 'bg-dark-hover text-text-secondary hover:text-text-primary hover:border-b-2 hover:border-primary'
             }`}
           >
             {tab.label}
@@ -128,31 +128,31 @@ export default function DocumentationTabs() {
                     </tr>
                   </thead>
                   <tbody>
-                    <tr className="hover:bg-gray-50">
+                    <tr className="hover:bg-dark-hover">
                       <td className="border border-gray-300 px-4 py-3 font-semibold">1</td>
                       <td className="border border-gray-300 px-4 py-3"><span className="bg-red-100 text-red-800 px-2 py-1 rounded">≥ 65%</span></td>
                       <td className="border border-gray-300 px-4 py-3">Generate targeted refinement prompt</td>
                       <td className="border border-gray-300 px-4 py-3">—</td>
                     </tr>
-                    <tr className="hover:bg-gray-50">
+                    <tr className="hover:bg-dark-hover">
                       <td className="border border-gray-300 px-4 py-3 font-semibold">2</td>
                       <td className="border border-gray-300 px-4 py-3"><span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded">≥ 75%</span></td>
                       <td className="border border-gray-300 px-4 py-3">Regenerate improved schema + re-evaluate</td>
                       <td className="border border-gray-300 px-4 py-3">—</td>
                     </tr>
-                    <tr className="hover:bg-gray-50">
+                    <tr className="hover:bg-dark-hover">
                       <td className="border border-gray-300 px-4 py-3 font-semibold">3</td>
                       <td className="border border-gray-300 px-4 py-3"><span className="bg-green-100 text-green-800 px-2 py-1 rounded">≥ 85%</span></td>
                       <td className="border border-gray-300 px-4 py-3">Continue refinement</td>
                       <td className="border border-gray-300 px-4 py-3">Score ≥ 85% OR 5 iterations completed</td>
                     </tr>
-                    <tr className="hover:bg-gray-50">
+                    <tr className="hover:bg-dark-hover">
                       <td className="border border-gray-300 px-4 py-3 font-semibold">4</td>
                       <td className="border border-gray-300 px-4 py-3"><span className="bg-green-100 text-green-800 px-2 py-1 rounded">≥ 85%</span></td>
                       <td className="border border-gray-300 px-4 py-3">Maintain threshold</td>
                       <td className="border border-gray-300 px-4 py-3">—</td>
                     </tr>
-                    <tr className="hover:bg-gray-50">
+                    <tr className="hover:bg-dark-hover">
                       <td className="border border-gray-300 px-4 py-3 font-semibold">5</td>
                       <td className="border border-gray-300 px-4 py-3"><span className="bg-green-100 text-green-800 px-2 py-1 rounded">≥ 85%</span></td>
                       <td className="border border-gray-300 px-4 py-3">Final evaluation</td>
