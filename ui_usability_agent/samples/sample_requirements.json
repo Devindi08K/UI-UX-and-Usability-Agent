@@ -1,5 +1,6 @@
 {
   "project_name": "StayEasy Hotel Booking Platform",
+  "domain": "Hospitality",
   "description": "A comprehensive hotel booking system that allows guests to search for rooms, make reservations, and manage their bookings. Hotel staff can manage room inventory, view bookings, and check in guests. System administrators can oversee hotel settings and user accounts.",
   "fr": [
     {

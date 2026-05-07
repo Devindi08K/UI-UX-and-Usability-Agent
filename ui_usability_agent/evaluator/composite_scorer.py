@@ -199,6 +199,17 @@ def print_score_report(report: dict) -> None:
 
     console.print(table)
 
+    wcag_details = report.get('wcag_details', {})
+    if wcag_details.get('reliability') == 'partial':
+        console.print(
+            Panel(
+                "WARNING: axe-core not available - WCAG score is partial "
+                "(axe 50% weight redistributed across BS4 checks; WCAG still counts 40% in composite).",
+                style='yellow',
+                expand=False,
+            )
+        )
+
     # Status panel
     total = report.get('total_score', 0)
     threshold = report.get('threshold', 85)
@@ -245,6 +256,13 @@ def _print_plain_report(report: dict) -> None:
     print(f"Total Score :  {report.get('total_score', 0):>3}  /  {report.get('threshold', 85)} threshold")
     print(f"Status      :  {'PASSED' if report.get('passed') else 'NEEDS REFINEMENT'}")
     print(f"Weakest     :  {report.get('weakest_standard', 'N/A')} → {report.get('weakest_metric', 'N/A')}")
+
+    wcag_details = report.get('wcag_details', {})
+    if wcag_details.get('reliability') == 'partial':
+        print(
+            "WARNING: axe-core not available - WCAG score is partial "
+            "(axe 50% weight redistributed across BS4 checks; WCAG still counts 40% in composite)."
+        )
 
     # Sub-score breakdown per standard
     for label, key, detail_key in [
