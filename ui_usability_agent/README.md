@@ -25,8 +25,8 @@ Steps 3-7 repeat until score reaches 85% or 5 iterations complete
 Project folder structure
 ui_usability_agent/
 ├── evaluator/
-│   ├── iso_metrics.py          # 5 BS4 functions for ISO 9241 sub-metrics
-│   ├── nielsen_metrics.py      # 6 BS4 functions for Nielsen heuristic checks
+│   ├── iso_metrics.py          # 6 BS4 functions for ISO 9241 sub-metrics
+│   ├── nielsen_metrics.py      # 8 BS4 functions for Nielsen heuristic checks
 │   ├── wcag_metrics.py         # Axe-core runner + WCAG penalty scorer
 │   └── composite_scorer.py     # Combines all scores, finds weakest standard
 ├── generator/
