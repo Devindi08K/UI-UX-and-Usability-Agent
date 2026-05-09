@@ -75,8 +75,8 @@ export default function DocumentationTabs() {
                     <div className="flex justify-between"><span className="text-text-secondary">Label pairing</span><span className="font-mono text-text-primary">0–4</span></div>
                     <div className="flex justify-between"><span className="text-text-secondary">Form completion</span><span className="font-mono text-text-primary">0–4</span></div>
                     <div className="flex justify-between"><span className="text-text-secondary">Heading hierarchy</span><span className="font-mono text-text-primary">0–4</span></div>
+                    <div className="flex justify-between"><span className="text-text-secondary">Tab order</span><span className="font-mono text-text-primary">0–4</span></div>
                     <div className="flex justify-between"><span className="text-text-secondary">Button clarity</span><span className="font-mono text-text-primary">0–4</span></div>
-                    <div className="flex justify-between"><span className="text-text-secondary">Interactive feedback</span><span className="font-mono text-text-primary">0–4</span></div>
                   </div>
                   <div className="text-xs text-neutral mt-4">Mean → normalised to 0–100</div>
                 </div>
@@ -91,10 +91,10 @@ export default function DocumentationTabs() {
                     <div className="flex justify-between"><span className="text-text-secondary">H3 User control</span><span className="font-mono text-text-primary">0–4</span></div>
                     <div className="flex justify-between"><span className="text-text-secondary">H4 Consistency</span><span className="font-mono text-text-primary">0–4</span></div>
                     <div className="flex justify-between"><span className="text-text-secondary">H5 Error prevention</span><span className="font-mono text-text-primary">0–4</span></div>
-                    <div className="flex justify-between"><span className="text-text-secondary">H6 Recognition</span><span className="font-mono text-text-primary">0–4</span></div>
+                    <div className="flex justify-between"><span className="text-text-secondary">H6 Form input type</span><span className="font-mono text-text-primary">0–4</span></div>
                     <div className="flex justify-between"><span className="text-text-secondary">H8 Minimalist design</span><span className="font-mono text-text-primary">0–4</span></div>
                     <div className="flex justify-between"><span className="text-text-secondary">H9 Error messages</span><span className="font-mono text-text-primary">0–4</span></div>
-                    <div className="flex justify-between"><span className="text-text-secondary">H10 Help / docs</span><span className="font-mono text-text-primary">0–4</span></div>
+                    <div className="flex justify-between"><span className="text-text-secondary">H10 Focus indicator</span><span className="font-mono text-text-primary">0–4</span></div>
                   </div>
                   <div className="text-xs text-neutral mt-4">Mean → normalised to 0–100</div>
                 </div>
