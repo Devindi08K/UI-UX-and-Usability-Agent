@@ -153,7 +153,8 @@ export default function PreviewPage() {
                   <div>
                     <h4 className="font-semibold text-text-primary mb-3">ISO 9241-11 Details</h4>
                     <div className="space-y-2">
-                      {report.details?.iso && Object.entries(report.details.iso).map(([key, value]) => (
+                      {report.report?.iso_details?.sub_scores
+                        && Object.entries(report.report.iso_details.sub_scores).map(([key, value]) => (
                         <div key={key} className="flex justify-between text-sm">
                           <span className="text-text-secondary">{key.replace(/_/g, ' ')}</span>
                           <span className="font-medium text-text-primary">{value}/4</span>
@@ -166,7 +167,8 @@ export default function PreviewPage() {
                   <div>
                     <h4 className="font-semibold text-text-primary mb-3">Nielsen Heuristics Details</h4>
                     <div className="space-y-2">
-                      {report.details?.nielsen && Object.entries(report.details.nielsen).map(([key, value]) => (
+                      {report.report?.nielsen_details?.sub_scores
+                        && Object.entries(report.report.nielsen_details.sub_scores).map(([key, value]) => (
                         <div key={key} className="flex justify-between text-sm">
                           <span className="text-text-secondary">{key.replace(/_/g, ' ')}</span>
                           <span className="font-medium text-text-primary">{value}/4</span>
@@ -179,7 +181,8 @@ export default function PreviewPage() {
                   <div>
                     <h4 className="font-semibold text-text-primary mb-3">WCAG 2.2 Details</h4>
                     <div className="space-y-2">
-                      {report.details?.wcag && Object.entries(report.details.wcag).map(([key, value]) => (
+                      {report.report?.wcag_details
+                        && Object.entries(report.report.wcag_details).map(([key, value]) => (
                         <div key={key} className="flex justify-between text-sm">
                           <span className="text-text-secondary">{key.replace(/_/g, ' ')}</span>
                           <span className="font-medium text-text-primary">{value ? '✓' : '✗'}</span>
@@ -195,7 +198,7 @@ export default function PreviewPage() {
                     <div className="flex items-center">
                       <span className="text-green-400 font-medium">✓ PASSED</span>
                       <span className="ml-2 text-sm text-text-secondary">
-                        Score: {report.scores?.composite || 0} / Threshold: {report.threshold || 65}
+                        Score: {report.report?.total_score || 0} / Threshold: {report.report?.threshold || 65}
                       </span>
                     </div>
                   </div>
