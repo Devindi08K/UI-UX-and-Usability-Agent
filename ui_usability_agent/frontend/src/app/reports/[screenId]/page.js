@@ -164,6 +164,11 @@ export default function ReportPage() {
                 Weakest POUR: {report.wcag_details.weakest_pour || 'N/A'}
               </p>
             </div>
+            {report.wcag_details.reliability === 'partial' && (
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-yellow-600 bg-yellow-900/20 px-3 py-1 text-xs font-semibold text-yellow-300">
+                Partial WCAG mode — axe-core unavailable
+              </div>
+            )}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
               <div className="p-3 bg-dark-bg border border-blue-700 rounded-lg">
                 <div className="font-medium text-text-primary">Alt Text</div>

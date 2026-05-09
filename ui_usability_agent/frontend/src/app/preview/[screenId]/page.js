@@ -130,19 +130,19 @@ export default function PreviewPage() {
                 {/* Overall Scores */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                   <div className="text-center p-4 bg-dark-bg border border-green-700 rounded-lg">
-                    <div className="text-3xl font-bold text-green-400">{report.iso_score || 0}</div>
+                    <div className="text-3xl font-bold text-green-400">{report.report?.iso_score || 0}</div>
                     <div className="text-sm text-text-secondary">ISO 9241-11</div>
                   </div>
                   <div className="text-center p-4 bg-dark-bg border border-purple-700 rounded-lg">
-                    <div className="text-3xl font-bold text-purple-400">{report.nielsen_score || 0}</div>
+                    <div className="text-3xl font-bold text-purple-400">{report.report?.nielsen_score || 0}</div>
                     <div className="text-sm text-text-secondary">Nielsen</div>
                   </div>
                   <div className="text-center p-4 bg-dark-bg border border-blue-700 rounded-lg">
-                    <div className="text-3xl font-bold text-blue-400">{report.wcag_score || 0}</div>
+                    <div className="text-3xl font-bold text-blue-400">{report.report?.wcag_score || 0}</div>
                     <div className="text-sm text-text-secondary">WCAG 2.2</div>
                   </div>
                   <div className="text-center p-4 bg-dark-bg border border-cyan-700 rounded-lg">
-                    <div className="text-3xl font-bold text-cyan-400">{report.total_score || 0}</div>
+                    <div className="text-3xl font-bold text-cyan-400">{report.report?.total_score || 0}</div>
                     <div className="text-sm text-text-secondary">Composite</div>
                   </div>
                 </div>
