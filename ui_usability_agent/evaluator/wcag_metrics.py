@@ -58,6 +58,7 @@ POUR_MAP = {
         'keyboard',                    # SC 2.1.1
         'focus-order-semantics',       # SC 2.4.3
         'bypass',                      # SC 2.4.1
+        'region',                      # SC 2.4.1 - page content in landmarks
         'tabindex',                    # SC 2.4.3
         'scrollable-region-focusable', # SC 2.1.1
         'focus-trap',                  # SC 2.1.2
@@ -88,50 +89,65 @@ POUR_MAP = {
 # axe-core integration
 # ---------------------------------------------------------------------------
 
+# evaluator/wcag_metrics.py  (replace the run_axe_core function)
+
+import subprocess
+import json
+import os
+import tempfile
+import shutil
+
 def run_axe_core(html_string: str) -> list:
     """
-    Write *html_string* to a temp file, run the axe CLI, and return
-    the violations list from the JSON output.
-
-    Returns [] if axe-core is not installed, times out, or returns
-    malformed output — the evaluator continues gracefully in all cases.
-
-    Command: axe <path> --format json --stdout
-
-    Ref: Deque Systems axe-core — https://github.com/dequelabs/axe-core
+    Runs axe-core via dedicated Node.js script (more reliable than CLI).
+    Falls back gracefully if Node is not available.
     """
     if not html_string or not html_string.strip():
-        return None
+        return []
 
     temp_path = None
     try:
-        with tempfile.NamedTemporaryFile(
-            mode='w', suffix='.html', delete=False, encoding='utf-8'
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.html', delete=False, encoding='utf-8') as f:
             f.write(html_string)
             temp_path = f.name
 
-        import shutil
-        axe_cmd = shutil.which('axe') or shutil.which('axe.cmd')
-        if not axe_cmd:
-            return None
+        node_script = os.path.join(os.path.dirname(__file__), 'axe_runner.js')
+        
+        if not os.path.exists(node_script):
+            # Fallback to CLI if script not present
+            axe_cmd = shutil.which('axe') or shutil.which('axe.cmd')
+            if axe_cmd:
+                result = subprocess.run(
+                    [axe_cmd, temp_path, '--format', 'json', '--stdout'],
+                    capture_output=True, text=True, timeout=30
+                )
+                if result.returncode == 0:
+                    data = json.loads(result.stdout)
+                    return data[0].get('violations', []) if data else []
+            return []
 
+        # Call our Node.js script
         result = subprocess.run(
-            [axe_cmd, temp_path, '--format', 'json', '--stdout'],
-            capture_output=True, text=True, timeout=30,
+            ['node', node_script, temp_path],
+            capture_output=True, text=True, timeout=45
         )
 
-        if result.returncode != 0:
-            return None
+        if result.returncode == 0:
+            data = json.loads(result.stdout)
+            return data.get('violations', [])
+        else:
+            print(f"[WCAG] Node axe failed: {result.stderr}")
+            return []
 
-        data = json.loads(result.stdout)
-        return data[0].get('violations', []) if data else None
-
-    except Exception:
-        return None
+    except Exception as e:
+        print(f"[WCAG] Axe execution error: {e}")
+        return []
     finally:
         if temp_path and os.path.exists(temp_path):
-            os.unlink(temp_path)
+            try:
+                os.unlink(temp_path)
+            except:
+                pass
 
 
 def axe_penalty_score(violations: list) -> float:

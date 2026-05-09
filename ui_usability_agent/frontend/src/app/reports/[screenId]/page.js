@@ -158,48 +158,77 @@ export default function ReportPage() {
           <div className="bg-dark-card border border-dark-hover rounded-lg shadow-sm p-6 mb-6">
             <h2 className="text-xl font-bold text-primary mb-4">WCAG 2.2 Details</h2>
             <div className="mb-4">
-              <p className="text-lg font-semibold text-text-primary">Score: {report.wcag_details.wcag_score || 0}/100</p>
+              <p className="text-lg font-semibold text-text-primary">Score: {report.wcag_details.wcag_score ?? 0}/100</p>
               <p className="text-sm text-text-secondary">
-                Reliability: {report.wcag_details.reliability || 'N/A'} |
-                Weakest POUR: {report.wcag_details.weakest_pour || 'N/A'}
+                Reliability: {report.wcag_details.reliability ?? 'N/A'}
+                {report.wcag_details.weakest_pour && report.wcag_details.weakest_pour !== 'unavailable'
+                  ? ` | Weakest POUR: ${report.wcag_details.weakest_pour}`
+                  : ''}
               </p>
             </div>
+
             {report.wcag_details.reliability === 'partial' && (
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-yellow-600 bg-yellow-900/20 px-3 py-1 text-xs font-semibold text-yellow-300">
-                Partial WCAG mode — axe-core unavailable
+                Partial WCAG mode — axe-core unavailable. Install it with: npm install -g @axe-core/cli
               </div>
             )}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-              <div className="p-3 bg-dark-bg border border-blue-700 rounded-lg">
-                <div className="font-medium text-text-primary">Alt Text</div>
-                <div className="text-2xl font-bold text-blue-400">{report.wcag_details.alt_score || 0}%</div>
-              </div>
-              <div className="p-3 bg-dark-bg border border-blue-700 rounded-lg">
-                <div className="font-medium text-text-primary">Landmarks</div>
-                <div className="text-2xl font-bold text-blue-400">{report.wcag_details.landmark_score || 0}%</div>
-              </div>
-              <div className="p-3 bg-dark-bg border border-blue-700 rounded-lg">
-                <div className="font-medium text-text-primary">Contrast</div>
-                <div className="text-2xl font-bold text-blue-400">{report.wcag_details.contrast_score || 0}%</div>
-              </div>
-              <div className="p-3 bg-dark-bg border border-blue-700 rounded-lg">
-                <div className="font-medium text-text-primary">Language</div>
-                <div className="text-2xl font-bold text-blue-400">{report.wcag_details.lang_score || 0}%</div>
-              </div>
+
+            {/* BS4 check scores — always available */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              {[
+                { label: 'Alt Text', value: report.wcag_details.alt_score },
+                { label: 'Landmarks', value: report.wcag_details.landmark_score },
+                { label: 'Contrast', value: report.wcag_details.contrast_score },
+                { label: 'Language', value: report.wcag_details.lang_score },
+              ].map(({ label, value }) => (
+                <div key={label} className="p-3 bg-dark-bg border border-blue-700 rounded-lg">
+                  <div className="font-medium text-text-primary">{label}</div>
+                  <div className="text-2xl font-bold text-blue-400">
+                    {value != null ? `${Math.round(value)}%` : '—'}
+                  </div>
+                </div>
+              ))}
             </div>
-            {report.wcag_details.pour_scores && (
-              <div className="mt-4">
-                <h3 className="font-semibold text-text-primary mb-2">POUR Scores</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {Object.entries(report.wcag_details.pour_scores).map(([principle, score]) => (
-                    <div key={principle} className="p-3 bg-dark-bg border border-blue-700 rounded-lg">
-                      <div className="font-medium text-text-primary">{principle}</div>
-                      <div className="text-xl font-bold text-blue-400">{score !== null ? score : 'N/A'}</div>
-                    </div>
-                  ))}
+
+            {/* Axe score — only when available */}
+            {report.wcag_details.axe_score != null && (
+              <div className="mb-6">
+                <div className="p-3 bg-dark-bg border border-blue-700 rounded-lg inline-block">
+                  <div className="font-medium text-text-primary">Axe-core Score</div>
+                  <div className="text-2xl font-bold text-blue-400">{Math.round(report.wcag_details.axe_score)}/100</div>
+                  {report.wcag_details.violations_count != null && (
+                    <div className="text-xs text-text-secondary mt-1">{report.wcag_details.violations_count} violation(s) found</div>
+                  )}
                 </div>
               </div>
             )}
+
+            {/* POUR scores — only show when axe-core ran (values won't be null) */}
+            {(() => {
+              const pour = report.wcag_details.pour_scores ?? {};
+              const validPour = Object.entries(pour).filter(([, v]) => v != null);
+              if (validPour.length === 0) {
+                return (
+                  <div className="mt-2 p-3 bg-dark-bg border border-dark-hover rounded text-sm text-text-secondary">
+                    POUR principle breakdown requires axe-core.{' '}
+                    <span className="text-yellow-300">Run: npm install -g @axe-core/cli</span>
+                  </div>
+                );
+              }
+              return (
+                <div className="mt-4">
+                  <h3 className="font-semibold text-text-primary mb-2">POUR Scores (out of 25)</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {validPour.map(([principle, score]) => (
+                      <div key={principle} className="p-3 bg-dark-bg border border-blue-700 rounded-lg">
+                        <div className="font-medium text-text-primary">{principle}</div>
+                        <div className="text-xl font-bold text-blue-400">{score}/25</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         )}
 

@@ -238,12 +238,35 @@ def print_score_report(report: dict) -> None:
         ('WCAG sub-scores',    'wcag_score',    'wcag_details'),
     ]:
         detail = report.get(detail_key, {})
-        sub = detail.get('sub_scores') or detail.get('pour_scores') or {}
-        if sub:
+        if detail_key == 'wcag_details':
+            # Show the BS4 sub-scores (always available) separately from POUR
+            wcag_sub = {
+                'alt_text':    detail.get('alt_score'),
+                'landmarks':   detail.get('landmark_score'),
+                'contrast':    detail.get('contrast_score'),
+                'lang':        detail.get('lang_score'),
+            }
             console.print(f"\n[dim]{label}:[/dim]")
-            for metric, score in sorted((k, v) for k, v in sub.items() if v is not None):
-                bar = '█' * score + '░' * (4 - score) if score <= 4 else '█' * 4
-                console.print(f"  {metric:<30} {bar}  {score}")
+            for metric, score in wcag_sub.items():
+                if score is not None:
+                    pct = int(score)
+                    bar = '█' * (pct // 25) + '░' * (4 - pct // 25)
+                    console.print(f"  {metric:<30} {bar}  {pct}%")
+            pour = detail.get('pour_scores') or {}
+            valid_pour = {k: v for k, v in pour.items() if v is not None}
+            if valid_pour:
+                console.print("  [dim]POUR breakdown:[/dim]")
+                for principle, score in valid_pour.items():
+                    console.print(f"    {principle:<28} {score}/25")
+            else:
+                console.print("  [dim]POUR: unavailable (axe-core not installed)[/dim]")
+        else:
+            sub = detail.get('sub_scores') or {}
+            if sub:
+                console.print(f"\n[dim]{label}:[/dim]")
+                for metric, score in sorted((k, v) for k, v in sub.items() if v is not None):
+                    bar = '█' * score + '░' * (4 - score) if score <= 4 else '█' * 4
+                    console.print(f"  {metric:<30} {bar}  {score}")
 
 
 def _print_plain_report(report: dict) -> None:
@@ -271,12 +294,35 @@ def _print_plain_report(report: dict) -> None:
         ('WCAG sub-scores',    'wcag_score',    'wcag_details'),
     ]:
         detail = report.get(detail_key, {})
-        sub = detail.get('sub_scores') or detail.get('pour_scores') or {}
-        if sub:
+        if detail_key == 'wcag_details':
+            # Show the BS4 sub-scores (always available) separately from POUR
+            wcag_sub = {
+                'alt_text':    detail.get('alt_score'),
+                'landmarks':   detail.get('landmark_score'),
+                'contrast':    detail.get('contrast_score'),
+                'lang':        detail.get('lang_score'),
+            }
             print(f"\n{label}:")
-            for metric, score in sorted((k, v) for k, v in sub.items() if v is not None):
-                bar = '█' * min(score, 4) + '░' * max(0, 4 - score) if score <= 4 else '█' * 4
-                print(f"  {metric:<30} {bar}  {score}")
+            for metric, score in wcag_sub.items():
+                if score is not None:
+                    pct = int(score)
+                    bar = '█' * (pct // 25) + '░' * (4 - pct // 25)
+                    print(f"  {metric:<30} {bar}  {pct}%")
+            pour = detail.get('pour_scores') or {}
+            valid_pour = {k: v for k, v in pour.items() if v is not None}
+            if valid_pour:
+                print("  POUR breakdown:")
+                for principle, score in valid_pour.items():
+                    print(f"    {principle:<28} {score}/25")
+            else:
+                print("  POUR: unavailable (axe-core not installed)")
+        else:
+            sub = detail.get('sub_scores') or {}
+            if sub:
+                print(f"\n{label}:")
+                for metric, score in sorted((k, v) for k, v in sub.items() if v is not None):
+                    bar = '█' * min(score, 4) + '░' * max(0, 4 - score) if score <= 4 else '█' * 4
+                    print(f"  {metric:<30} {bar}  {score}")
 
 
 # ---------------------------------------------------------------------------
