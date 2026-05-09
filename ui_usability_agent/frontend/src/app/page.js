@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import InputForm from '../components/InputForm';
 import UIOutput from '../components/UIOutput';
@@ -20,6 +20,49 @@ export default function Home() {
   const [outputsLoading, setOutputsLoading] = useState(false);
   const [reportsLoading, setReportsLoading] = useState(false);
   const [selectedScreensForEval, setSelectedScreensForEval] = useState([]);
+  const [restoring, setRestoring] = useState(true);
+
+  useEffect(() => {
+    const restore = async () => {
+      try {
+        const [outputsRes, planRes, reportsRes] = await Promise.all([
+          fetch('/api/outputs'),
+          fetch('/api/plan-status'),
+          fetch('/api/reports'),
+        ]);
+
+        if (outputsRes.ok) {
+          const outputsData = await outputsRes.json();
+          const screens = outputsData.screens || [];
+          setOutputScreens(screens);
+          if (screens.length > 0) {
+            setActiveStep('evaluate');
+          }
+        }
+
+        if (planRes.ok) {
+          const planData = await planRes.json();
+          if (planData.screens && planData.screens.length > 0) {
+            setPlanScreens(planData.screens);
+            setSelectedScreenId(planData.screens[0]?.screen_id || '');
+          }
+        }
+
+        if (reportsRes.ok) {
+          const reportsData = await reportsRes.json();
+          if (reportsData.reports && reportsData.reports.length > 0) {
+            setEvaluationReports(reportsData.reports);
+          }
+        }
+      } catch (err) {
+        console.warn('[restore] Could not restore state:', err);
+      } finally {
+        setRestoring(false);
+      }
+    };
+
+    restore();
+  }, []);
 
   const formatLogs = (logData) => {
     if (!logData) return '';
@@ -168,6 +211,14 @@ export default function Home() {
       setLoading((prev) => ({ ...prev, evaluate: false }));
     }
   };
+
+  if (restoring) {
+    return (
+      <div className="min-h-screen bg-dark-bg text-text-primary flex items-center justify-center">
+        <p className="text-text-secondary animate-pulse">Restoring session...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-dark-bg text-text-primary">

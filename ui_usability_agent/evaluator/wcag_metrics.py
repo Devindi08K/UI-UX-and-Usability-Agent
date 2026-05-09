@@ -111,8 +111,13 @@ def run_axe_core(html_string: str) -> list:
             f.write(html_string)
             temp_path = f.name
 
+        import shutil
+        axe_cmd = shutil.which('axe') or shutil.which('axe.cmd')
+        if not axe_cmd:
+            return None
+
         result = subprocess.run(
-            ['axe', temp_path, '--format', 'json', '--stdout'],
+            [axe_cmd, temp_path, '--format', 'json', '--stdout'],
             capture_output=True, text=True, timeout=30,
         )
 
