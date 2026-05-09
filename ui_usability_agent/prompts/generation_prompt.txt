@@ -346,8 +346,9 @@ H5 — Error prevention (REQUIRED for forms)
 
 H6 — Recognition rather than recall (REQUIRED)
   - Include at least ONE:
-      • <select> dropdowns
-      • autocomplete attributes
+      • Semantic input types: email, tel, date, number, url, search
+      • <select> dropdowns with meaningful options
+      • autocomplete attributes on inputs
       • helper text under inputs
       • breadcrumbs (aria-label="breadcrumb")
 
@@ -357,11 +358,10 @@ H9 — Error handling (REQUIRED)
       • Validation feedback text (e.g. "Invalid email")
 
 H10 — Help and documentation (REQUIRED)
-  - Include at least ONE:
-      • Tooltip via title attribute
-      • aria-describedby linking to help text
-      • Help link (e.g. "Need help?", "FAQ")
-      • <details> / <summary> help section
+  - DO NOT use positive tabindex values (tabindex="1", "2", etc.)
+  - Use tabindex="0" only if tabindex is needed at all
+  - All interactive elements must have visible focus styles:
+      focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2
 
 Failure to include these will result in poor usability.
 
@@ -430,26 +430,25 @@ And include this block below any form submit button:
     Please fix the errors above before submitting.
   </div>
 
-── H10: help_documentation (score 0 without this) ───────────────────────────────
-Include ALL FOUR in the page:
+── H6: form_input_type (score 0 without semantic inputs) ────────────────────────
+Use semantic HTML5 input types instead of generic type="text":
 
-  1. title attribute on every input and select:
-     <input ... title="Enter guest name or booking ID to search">
+  • type="email" for email addresses
+  • type="tel" for phone numbers  
+  • type="date" for dates
+  • type="number" for numeric values
+  • type="url" for web addresses
+  • type="search" for search inputs
 
-  2. aria-describedby on at least one input, linked to a hint:
-     <input id="search" aria-describedby="search-hint" ...>
-     <p id="search-hint" class="mt-1 text-xs text-gray-400">
-       Search by name, ID, or room number
-     </p>
+At least 50% of inputs should use semantic types for full score.
+  Also include <select> dropdowns where applicable — these must have linked
+  <label> elements to score on label_pairing.
 
-  3. A <details> / <summary> help section somewhere on the page:
-     <details class="text-xs text-gray-500">
-       <summary class="cursor-pointer font-medium text-violet-600">Need help?</summary>
-       <p class="mt-1">Use filters to narrow results. Click View to see full details.</p>
-     </details>
-
-  4. A help link in the header or footer:
-     <a href="/help" class="text-xs text-gray-400 hover:text-violet-600">FAQ / Help</a>
+  ── H10 / ISO Efficiency: focus_indicator + tab_order (score 0 without these) ──
+    1. NO positive tabindex values anywhere — checked by both tab_order_score (ISO)
+      and focus_indicator_score (Nielsen H10)
+    2. focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2
+      on EVERY button, link, input, select, textarea
 
 ── ISO label_pairing (score 0 without this) ─────────────────────────────────────
 EVERY <input>, <textarea>, and <select> MUST have a linked <label>.
@@ -464,27 +463,18 @@ Use the for="id" pattern — the id on the input MUST match the for on the label
 
 This applies to ALL inputs: filter toolbar, forms, modals. No exceptions.
 
-── ISO interactive_feedback (score 1 without all four) ──────────────────────────
-Include ALL FOUR feedback infrastructure patterns:
+── ISO focus_indicator (score 1 without all) ────────────────────────────────
+Include visible focus indicators on ALL interactive elements:
 
-  1. aria-live region (for dynamic announcements):
-     <div aria-live="polite" id="status-region" class="sr-only"></div>
-     Place in <main> near the top.
+  1. Tailwind focus classes on EVERY button and link:
+     focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2
 
-  2. role="status" container:
-     <div role="status" id="action-status"
-          class="hidden text-xs text-green-600 font-medium">
-       Action completed successfully.
-     </div>
+  2. Tailwind focus classes on EVERY input, select, textarea:
+     focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2
 
-  3. Tailwind transition + hover: + focus: classes on interactive elements.
-     EVERY button and link must include: transition-colors hover:... focus:...
-     EVERY input must include: focus:outline-none focus:ring-2
-                               focus:ring-violet-500 focus:ring-offset-2
+  3. tabindex="0" on custom interactive elements (if any)
 
-  4. A <progress> element (counts for both H1 and interactive_feedback):
-     <progress value="1" max="5" class="w-24 h-1 accent-violet-600"
-       aria-label="Step 1 of 5"></progress>
+  4. NO positive tabindex values (tabindex="1", "2", etc.) — breaks keyboard navigation
 
 ── ISO minimalist_design / Nielsen minimalist_design (score 1 without this) ─────
 The evaluator computes: ratio = semantic_tags / (semantic_tags + divs).
@@ -505,28 +495,6 @@ MANDATORY structure — use semantic wrappers instead of divs:
   BEFORE (scores 1):  <div class="..."> x 40, <main> x 1, <header> x 1
   AFTER  (scores 4):  <section> x 4, <article> x 3, <nav> x 2,
                       <header> x 1, <main> x 1, <footer> x 1, <div> x 10
-
-── H6 / ISO recognition (score 1 without all) ───────────────────────────────────
-Include ALL THREE:
-
-  1. <select> with a meaningful label for every dropdown filter:
-     <label for="status-filter">Status</label>
-     <select id="status-filter" autocomplete="off">...</select>
-
-  2. autocomplete attribute on text inputs:
-     <input type="text" autocomplete="name" ...>
-     <input type="email" autocomplete="email" ...>
-
-  3. Breadcrumb nav:
-     <nav aria-label="breadcrumb">
-       <ol class="flex gap-2 text-xs text-gray-500">
-         <li><a href="#">Home</a></li>
-         <li>/</li>
-         <li aria-current="page" class="text-gray-800 font-medium">
-           Manage Bookings
-         </li>
-       </ol>
-     </nav>
 
 ================================================================================
 HTML BOILERPLATE

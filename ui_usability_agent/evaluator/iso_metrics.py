@@ -10,7 +10,6 @@ raw HTML — sub-metrics accept a pre-parsed BeautifulSoup object so they
 can be unit-tested independently.
 """
 
-import re
 from bs4 import BeautifulSoup
 
 
@@ -178,6 +177,35 @@ def heading_hierarchy_score(soup: BeautifulSoup) -> int:
 
 
 # ---------------------------------------------------------------------------
+# Efficiency
+# ---------------------------------------------------------------------------
+
+def tab_order_score(soup: BeautifulSoup) -> int:
+    """
+    ISO Efficiency proxy — keyboard navigation efficiency.
+
+    Checks that interactive elements don't have positive tabindex values 
+    (tabindex="1", "2" etc.) which break natural keyboard navigation order.
+    
+    Positive tabindex values disrupt the expected keyboard navigation order, 
+    forcing users to expend extra mental effort and time to navigate the page — 
+    a direct efficiency failure per ISO 9241-11.
+
+    Ref: WCAG 2.2 SC 2.4.3 Focus Order (Level A). WAI-ARIA 1.2 tabindex guidance.
+    """
+    positive_tabindex = soup.find_all(
+        attrs={'tabindex': lambda v: v and v.strip().lstrip('-').isdigit() 
+               and int(v.strip()) > 0}
+    )
+    count = len(positive_tabindex)
+    if count == 0:   return 4
+    elif count == 1: return 3
+    elif count == 2: return 2
+    elif count == 3: return 1
+    else:            return 0
+
+
+# ---------------------------------------------------------------------------
 # Satisfaction
 # ---------------------------------------------------------------------------
 
@@ -225,42 +253,6 @@ def button_clarity_score(soup: BeautifulSoup) -> int:
     return round((clear / len(all_buttons)) * 4)
 
 
-def interactive_feedback_score(soup: BeautifulSoup) -> int:
-    """
-    ISO Satisfaction proxy — perceived responsiveness.
-
-    Detects four categories of feedback infrastructure (each +1, capped at 4):
-      1. aria-live regions — dynamic announcements (WCAG SC 4.1.3)
-      2. role="status" / "alert" / "log" — explicit feedback containers
-      3. Tailwind transition/hover/focus/active classes — visual state change
-      4. <progress>, role="progressbar", aria-busy — loading indicators
-
-    Ref: ISO 9241-11:2018 §3.1.5; WCAG 2.2 SC 4.1.3; Nielsen (1993)
-    """
-    score = 0
-
-    if soup.find(attrs={'aria-live': True}):
-        score += 1
-
-    if soup.find(attrs={'role': lambda r: r and r.lower() in {'status', 'alert', 'log'}}):
-        score += 1
-
-    interactive_pattern = re.compile(
-        r'\b(transition|transition-\w+|hover:|active:|focus:|focus-visible:)\b'
-    )
-    for el in soup.find_all(attrs={'class': True}):
-        if interactive_pattern.search(' '.join(el.get('class', []))):
-            score += 1
-            break
-
-    if (soup.find(attrs={'aria-busy': True})
-            or soup.find('progress')
-            or soup.find(attrs={'role': 'progressbar'})):
-        score += 1
-
-    return min(score, 4)
-
-
 # ---------------------------------------------------------------------------
 # Composite
 # ---------------------------------------------------------------------------
@@ -275,8 +267,8 @@ def compute_iso_score(html_string: str) -> dict:
     label_pairing        Effectiveness
     form_completion      Efficiency
     heading_hierarchy    Efficiency
+    tab_order            Efficiency
     button_clarity       Satisfaction
-    interactive_feedback Satisfaction
 
     Formula: iso_score = (mean(sub_scores) / 4.0) × 100
 
@@ -297,8 +289,8 @@ def compute_iso_score(html_string: str) -> dict:
         'label_pairing':        label_pairing_score(soup),
         'form_completion':      form_completion_score(soup),
         'heading_hierarchy':    heading_hierarchy_score(soup),
+        'tab_order':            tab_order_score(soup),
         'button_clarity':       button_clarity_score(soup),
-        'interactive_feedback': interactive_feedback_score(soup),
     }
 
     raw_average = sum(scores.values()) / len(scores)

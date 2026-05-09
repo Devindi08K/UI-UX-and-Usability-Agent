@@ -80,7 +80,7 @@ The weight distribution balances three evaluation perspectives according to the 
 
 **Standard:** ISO 9241-11:2018 *Ergonomics of human-system interaction — Part 11: Usability: Definitions and concepts.* Geneva: International Organization for Standardization.
 
-ISO 9241-11 defines usability across three measurable dimensions: **Effectiveness**, **Efficiency**, and **Satisfaction**. The five original functions plus one addition each map to one of these dimensions.
+ISO 9241-11 defines usability across three measurable dimensions: **Effectiveness**, **Efficiency**, and **Satisfaction**. The six functions each map to one of these dimensions.
 
 ---
 
@@ -156,6 +156,19 @@ A logical heading sequence allows users to rapidly scan and locate content witho
 
 ---
 
+### `tab_order_score` → Efficiency
+
+**What it measures:** Checks that interactive elements don't have positive tabindex values (tabindex="1", "2" etc.) which break natural keyboard navigation order.
+
+**Why tab order = efficiency?**
+Efficiency in ISO 9241-11 is defined as "resources expended in relation to the accuracy and completeness with which users achieve goals." Positive tabindex values disrupt the expected keyboard navigation order, forcing users to expend extra mental effort and time to navigate the page — a direct efficiency failure.
+
+**Standards basis:** WCAG 2.2 SC 2.4.3 Focus Order (Level A) explicitly prohibits positive tabindex values that disrupt logical tab order. WAI-ARIA 1.2 tabindex guidance.
+
+**Scoring logic:** Penalty-based scoring where each positive tabindex reduces the score. 0 violations = 4, 1 = 3, 2 = 2, 3 = 1, 4+ = 0.
+
+---
+
 ### `button_clarity_score` → Satisfaction
 
 **What it measures:** Whether button labels use specific, non-vague action text.
@@ -169,30 +182,11 @@ Satisfaction in ISO 9241-11 includes "freedom from discomfort." Vague button lab
 
 ---
 
-### `interactive_feedback_score` → Satisfaction *(added)*
-
-**What it measures:** Whether the page has structural mechanisms for communicating the result of user actions back to the user (loading states, success/error confirmations, animated state changes).
-
-**Why this was added:**
-The original five ISO functions covered structure and labelling but nothing about dynamic feedback — a major gap. ISO 9241-11:2018 §3.1.5 defines satisfaction as including "freedom from discomfort." Interfaces that give no indication of action outcomes feel unresponsive, which is a primary source of frustration.
-
-**Research basis:** Nielsen (1993) demonstrated that response time feedback is critical at three thresholds (<1 s, <10 s, >10 s). In static HTML we cannot measure actual response time, but we can detect whether the developer provisioned feedback infrastructure at all.
-
-**Detection categories (each worth +1, capped at 4):**
-| Category | Mechanism |
-|---|---|
-| Dynamic announcements | `aria-live` regions (WCAG SC 4.1.3) |
-| Explicit feedback roles | `role="status"`, `role="alert"`, `role="log"` |
-| Visual state transitions | Tailwind `transition`, `hover:`, `active:`, `focus:` classes |
-| Loading indicators | `<progress>`, `role="progressbar"`, `aria-busy` |
-
----
-
 ## Nielsen Heuristic Metrics
 
 **Standard:** Nielsen, J. (1994). *10 usability heuristics for user interface design.* Nielsen Norman Group. https://www.nngroup.com/articles/ten-usability-heuristics/
 
-The original specification covered six heuristics (H1, H3, H4, H5, H8, H9). The revised engine adds H6 and H10, which were entirely absent.
+The specification covers eight heuristics (H1, H3, H4, H5, H6, H8, H9, H10). H6 is implemented via form_input_type_score and H10 via focus_indicator_score.
 
 ---
 
@@ -255,21 +249,26 @@ The original specification covered six heuristics (H1, H3, H4, H5, H8, H9). The 
 
 ---
 
-### `recognition_score` → H6: Recognition rather than recall *(added)*
+### `form_input_type_score` → H6: Recognition rather than recall *(added)*
 
-**What it measures:** Whether the interface presents options visually rather than requiring users to remember them.
+**What it measures:** Whether inputs use semantic HTML5 input types (email, tel, date, number, url) instead of generic type="text".
 
 **Heuristic:** "Minimize the user's memory load by making objects, actions, and options visible. The user should not have to remember information from one part of the dialogue to another."
 
-**Why this was added:** H6 was entirely absent from the original six-function set. It is especially relevant to LLM-generated UIs, which often produce free-text inputs where a `<select>` or `<datalist>` would better serve the user.
+**Why this replacement:** Semantic input types trigger browser-native UI (date picker, numeric keyboard, email validation) — the browser presents the valid options to the user instead of requiring them to remember the format. This is recognition over recall.
 
-**Detection categories (each worth +1, capped at 4):**
-| Category | Mechanism |
+**Standards basis:** WHATWG HTML Living Standard defines these types specifically for this purpose. W3C WCAG SC 1.3.5 (Identify Input Purpose) maps directly to this.
+
+**Scoring logic:** Ratio of semantic inputs to total inputs, scaled to 0–4. Returns 4 if no inputs (no opportunity for improvement).
+
+**Score mapping:**
+| Semantic inputs / Total inputs | Score |
 |---|---|
-| Visible choice lists | `<select>` elements |
-| Browser-assisted recall | `autocomplete` attribute |
-| Suggested options | `<datalist>` linked to an input |
-| Location awareness | Breadcrumb navigation (`aria-label="breadcrumb"`) |
+| 100% | 4 |
+| 75%+ | 3 |
+| 50%+ | 2 |
+| 25%+ | 1 |
+| Below 25% | 0 |
 
 ---
 
@@ -295,21 +294,18 @@ The original specification covered six heuristics (H1, H3, H4, H5, H8, H9). The 
 
 ---
 
-### `help_documentation_score` → H10: Help and documentation *(added)*
+### `focus_indicator_score` → H10: Help and documentation
 
-**What it measures:** Whether contextual help mechanisms are present.
+**What it measures:** Whether interactive elements have visible focus styles — either via focus: Tailwind classes or explicit CSS focus attributes.
 
 **Heuristic:** "Even though it is better if the system can be used without documentation, it may be necessary to provide help. Information should be easy to search, focused on the user's task, list concrete steps, and not be too large."
 
-**Why this was added:** H10 was entirely absent from the original six-function set. LLM-generated UIs frequently omit tooltips, inline help text, and help links entirely.
+**Why focus indicators = help and documentation?**
+H10 states the system should support users who need help navigating. Visible focus indicators are the primary navigation aid for keyboard users — without them, keyboard users require external documentation to understand how to use the interface. The presence of focus styles is therefore a structural proxy for whether the system is independently navigable without external help.
 
-**Detection categories (each worth +1, capped at 4):**
-| Category | Mechanism |
-|---|---|
-| Hover tooltips | `title` attribute on interactive elements |
-| Linked descriptions | `aria-describedby` |
-| Progressive disclosure | `<details>` / `<summary>` |
-| Help links | `<a>` with text/href containing 'help', 'faq', 'guide', etc. |
+**Standards basis:** WCAG 2.2 SC 2.4.7 Focus Visible (Level AA). WCAG 2.2 SC 2.4.11 Focus Appearance (Level AA). WebAIM keyboard accessibility guidelines.
+
+**Scoring logic:** Ratio of interactive elements with focus styles to total interactive elements, scaled to 0–4. Returns 4 if no interactive elements.
 
 ---
 
@@ -498,12 +494,10 @@ All established tools use similar arithmetic: collect ratings/measurements → m
 | ISO 9241-11:2018. *Ergonomics of human-system interaction — Part 11: Usability.* Geneva: ISO. | All ISO metrics |
 | ISO 9241-143:2012. *Ergonomics of human-system interaction — Part 143: Forms.* Geneva: ISO. | `label_pairing_score`, `form_completion_score`, `button_clarity_score` |
 | ISO 9241-171:2008. *Ergonomics of human-system interaction — Part 171: Guidance on software accessibility.* Geneva: ISO. | `label_pairing_score` |
-| ISO 9241-110:2020. *Ergonomics of human-system interaction — Part 110: Interaction principles.* Geneva: ISO. | `recognition_score`, `help_documentation_score` |
 | W3C (2023). *WCAG 2.2.* https://www.w3.org/TR/WCAG22/ | All WCAG metrics |
 | W3C (2023). *WAI-ARIA 1.2.* https://www.w3.org/TR/wai-aria-1.2/ | `label_pairing_score`, `error_message_score`, `aria_landmark_score` |
 | W3C (2023). *ARIA Authoring Practices Guide.* https://www.w3.org/WAI/ARIA/apg/ | `aria_landmark_score` |
 | Nielsen, J. (1994). *10 usability heuristics for user interface design.* NNGroup. | All Nielsen metrics |
-| Nielsen, J. (1993). *Response Time Limits.* NNGroup. https://www.nngroup.com/articles/response-times-3-important-limits/ | `interactive_feedback_score` |
 | Nielsen, J. (2000). *Designing Web Usability.* New Riders. | `nav_depth_score` |
 | Zaphiris, P. & Mtei, L. (1997). Depth vs. breadth in the arrangement of web links. *Proc. HFES*, 41, 1229–1233. | `nav_depth_score` |
 | Krug, S. (2014). *Don't Make Me Think, Revisited* (3rd ed.). New Riders. | `button_clarity_score` |
@@ -512,6 +506,12 @@ All established tools use similar arithmetic: collect ratings/measurements → m
 | Radovanović, D., Krstić, M. & Bisercić, A. (2015). Structural analysis of HTML5 semantic elements. *Proc. ICIST 2015*, 1, 124–128. | `minimalist_design_score` |
 | WebAIM (2023). *The WebAIM Million — Annual accessibility analysis.* https://webaim.org/projects/million/ | `alt_text_ratio`, `html_lang_score` |
 | WebAIM (2023). *Semantic Structure: Headings.* https://webaim.org/techniques/semanticstructure/ | `heading_hierarchy_score` |
+| WebAIM (2023). *Keyboard Accessibility.* https://webaim.org/techniques/keyboard/ | `focus_indicator_score` |
+| WHATWG (2023). *HTML Living Standard — Input Types.* https://html.spec.whatwg.org/multipage/input.html#input-types | `form_input_type_score` |
+| W3C (2023). *WCAG 2.2 SC 2.4.3 Focus Order.* https://www.w3.org/TR/WCAG22/#focus-order | `tab_order_score` |
+| W3C (2023). *WCAG 2.2 SC 2.4.7 Focus Visible.* https://www.w3.org/TR/WCAG22/#focus-visible | `focus_indicator_score` |
+| W3C (2023). *WCAG 2.2 SC 2.4.11 Focus Appearance.* https://www.w3.org/TR/WCAG22/#focus-appearance | `focus_indicator_score` |
+| W3C (2023). *WCAG 2.2 SC 1.3.5 Identify Input Purpose.* https://www.w3.org/TR/WCAG22/#identify-input-purpose | `form_input_type_score` |
 | Deque Systems (2023). *axe-core GitHub repository.* https://github.com/dequelabs/axe-core | `run_axe_core`, `axe_penalty_score` |
 | Deque Systems (2023). *The Role of Automated Testing in Accessibility.* https://www.deque.com/blog/ | All WCAG metrics (limitations) |
 | EN 301 549 v3.2.1 (2021). *Accessibility requirements for ICT products and services.* ETSI. | Weighting rationale |

@@ -10,10 +10,10 @@ H1  system_status_score
 H3  user_control_score
 H4  button_consistency_score
 H5  error_prevention_score
-H6  recognition_score          (added — was missing from original)
+H6  form_input_type_score     (added — was missing from original)
 H8  minimalist_design_score
 H9  error_message_score
-H10 help_documentation_score   (added — was missing from original)
+H10 focus_indicator_score    (added — was missing from original)
 
 Sub-metric functions return int in [0, 4]. Only compute_nielsen_score()
 parses raw HTML.
@@ -161,36 +161,29 @@ def error_prevention_score(soup: BeautifulSoup) -> int:
     return round((validated / len(inputs)) * 4)
 
 
-def recognition_score(soup: BeautifulSoup) -> int:
+def form_input_type_score(soup: BeautifulSoup) -> int:
     """
     H6 — Recognition rather than recall.
 
-    Detects four patterns that present choices visibly rather than requiring
-    memory (each +1, capped at 4):
-      1. <select> — visible list of valid options
-      2. autocomplete attribute — browser-assisted recall
-      3. <datalist> — suggestion list for text inputs
-      4. Breadcrumb nav (aria-label containing "breadcrumb")
+    Checks whether inputs use semantic HTML5 input types (email, tel, date, 
+    number, url) instead of generic type="text".
+    
+    Semantic input types trigger browser-native UI (date picker, numeric 
+    keyboard, email validation) — the browser presents the valid options to 
+    the user instead of requiring them to remember the format. This is 
+    recognition over recall.
 
-    Added because H6 was entirely absent from the original function set.
-
-    Ref: Nielsen (1994) H6; ISO 9241-110:2020 §4.4
+    Ref: WHATWG HTML Living Standard — Input Types. WCAG 2.2 SC 1.3.5.
     """
-    score = 0
-
-    if soup.find('select'):
-        score += 1
-
-    if soup.find(attrs={'autocomplete': True}):
-        score += 1
-
-    if soup.find('datalist'):
-        score += 1
-
-    if soup.find(attrs={'aria-label': lambda v: v and 'breadcrumb' in v.lower()}):
-        score += 1
-
-    return min(score, 4)
+    SEMANTIC_TYPES = {'email','tel','date','number','url','search','month','week','time'}
+    inputs = [i for i in soup.find_all('input') 
+              if (i.get('type','text') or 'text').lower() not in 
+              {'hidden','submit','button','image','reset','file','checkbox','radio'}]
+    if not inputs:
+        return 4
+    semantic = sum(1 for i in inputs 
+                   if (i.get('type') or '').lower() in SEMANTIC_TYPES)
+    return round((semantic / len(inputs)) * 4)
 
 
 def minimalist_design_score(soup: BeautifulSoup) -> int:
@@ -265,40 +258,32 @@ def error_message_score(soup: BeautifulSoup) -> int:
     else:            return 4
 
 
-def help_documentation_score(soup: BeautifulSoup) -> int:
+def focus_indicator_score(soup: BeautifulSoup) -> int:
     """
     H10 — Help and documentation.
 
-    Detects four contextual help mechanisms (each +1, capped at 4):
-      1. title attribute on any element — hover tooltip
-      2. aria-describedby — linked description paragraph
-      3. <details> / <summary> — progressive disclosure
-      4. Help links (<a> with text/href containing help/faq/guide/tutorial/?)
+    Checks whether interactive elements have visible focus styles — either 
+    via focus: Tailwind classes or explicit CSS focus attributes.
+    
+    Focus indicators are a form of system feedback that helps users understand 
+    where they are and how to navigate — directly supporting help and navigation, 
+    which is H10's concern. Invisible focus indicators leave keyboard users 
+    disoriented and unable to effectively use the interface without external help.
 
-    Added because H10 was entirely absent from the original function set.
-
-    Ref: Nielsen (1994) H10; ISO 9241-110:2020 §4.8
+    Ref: WCAG 2.2 SC 2.4.7 Focus Visible (Level AA). WCAG 2.2 SC 2.4.11 
+         Focus Appearance (Level AA). WebAIM keyboard accessibility guidelines.
     """
-    HELP_TERMS = {'help', 'faq', 'guide', 'tutorial', 'documentation', 'support', '?'}
-    score = 0
-
-    if soup.find(attrs={'title': True}):
-        score += 1
-
-    if soup.find(attrs={'aria-describedby': True}):
-        score += 1
-
-    if soup.find('details') or soup.find('summary'):
-        score += 1
-
-    for link in soup.find_all('a'):
-        text = link.get_text(strip=True).lower()
-        href = (link.get('href') or '').lower()
-        if any(t in text or t in href for t in HELP_TERMS):
-            score += 1
-            break
-
-    return min(score, 4)
+    import re
+    FOCUS_PATTERN = re.compile(r'\bfocus[:-]\S+|\bfocus-visible\S*')
+    interactive = soup.find_all(['button','a','input','select','textarea'])
+    if not interactive:
+        return 4
+    with_focus = sum(
+        1 for el in interactive
+        if FOCUS_PATTERN.search(' '.join(el.get('class') or []))
+        or el.get('tabindex') == '0'
+    )
+    return round((with_focus / len(interactive)) * 4)
 
 
 # ---------------------------------------------------------------------------
@@ -315,10 +300,10 @@ def compute_nielsen_score(html_string: str) -> dict:
     user_control       H3
     button_consistency H4
     error_prevention   H5
-    recognition        H6  (added)
+    form_input_type    H6  (added)
     minimalist_design  H8
     error_message      H9
-    help_documentation H10 (added)
+    focus_indicator    H10 (added)
 
     Formula: nielsen_score = (mean(sub_scores) / 4.0) × 100
 
@@ -339,10 +324,10 @@ def compute_nielsen_score(html_string: str) -> dict:
         'user_control':       user_control_score(soup),
         'button_consistency': button_consistency_score(soup),
         'error_prevention':   error_prevention_score(soup),
-        'recognition':        recognition_score(soup),
+        'form_input_type':    form_input_type_score(soup),
         'minimalist_design':  minimalist_design_score(soup),
         'error_message':      error_message_score(soup),
-        'help_documentation': help_documentation_score(soup),
+        'focus_indicator':    focus_indicator_score(soup),
     }
 
     raw_average = sum(scores.values()) / len(scores)
